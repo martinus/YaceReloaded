@@ -130,9 +130,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\exmars\pmars.c" />
-    <ClCompile Include="..\src\exmars\pspace.c" />
-    <ClCompile Include="..\src\exmars\sim.c" />
+    <ClCompile Include="..\src\exmars\pmars.cpp" />
+    <ClCompile Include="..\src\exmars\pspace.cpp" />
+    <ClCompile Include="..\src\exmars\sim.cpp" />
     <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>

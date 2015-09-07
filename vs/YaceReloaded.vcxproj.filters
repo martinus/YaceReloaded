@@ -2,13 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\exmars\pspace.c">
+    <ClCompile Include="..\src\exmars\pmars.cpp">
       <Filter>exmars</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\exmars\sim.c">
+    <ClCompile Include="..\src\exmars\sim.cpp">
       <Filter>exmars</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\exmars\pmars.c">
+    <ClCompile Include="..\src\exmars\pspace.cpp">
       <Filter>exmars</Filter>
     </ClCompile>
   </ItemGroup>

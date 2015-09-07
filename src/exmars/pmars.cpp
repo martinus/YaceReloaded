@@ -30,6 +30,9 @@
 #include <exmars/insn_help.h>
 #include <exmars/insn.h>
 
+#include <chrono>
+#include <iostream>
+
 #define concat(a,b) (strlen(a)+strlen(b)<MAXALLCHAR?pstrcat((a),(b)):NULL)
 
 /**************************** config **********************************/
@@ -515,9 +518,7 @@ long calc(mars_t* mars, long x, long y, int op)
 
 /*--------------------*/
 char   *
-getop(expr, oper)
-    char   *expr;
-    char   *oper;
+getop(char* expr, char* oper)
 {
     char    ch;
     switch (ch = *(expr++)) {
@@ -692,9 +693,7 @@ pstrchr(const char* s, int c)
 
 /* ********************************************************************** */
 
-char   *
-pstrdup(s)
-    char   *s;
+char* pstrdup(char* s)
 {
     char   *p, *q;
     register int i;
@@ -713,9 +712,7 @@ pstrdup(s)
 
 /* ********************************************************************** */
 
-char   *
-pstrcat(s1, s2)
-    char   *s1, *s2;
+char* pstrcat(char* s1, char* s2)
 {
     register char *p = s1;
 
@@ -769,9 +766,7 @@ uChar skip_space(char* str, uChar i)
 
 /* ********************************************************************** */
 
-void 
-to_upper(str)
-    char   *str;
+void to_upper(char* str)
 {
     while ((*str = toupper_(*str)) != '\0')
         str++;
@@ -1064,9 +1059,7 @@ void disposesrc(src_st* r) {
   struct line_st *nextline;
   }       line_st;
 */
-static void
-disposeline(aline)
-    line_st *aline;
+static void disposeline(line_st *aline)
 {
     line_st *tmp;
 
@@ -1087,9 +1080,7 @@ disposeline(aline)
   struct grp_st *nextsym;
   }       grp_st;
 */
-static void
-disposegrp(agrp)
-    grp_st *agrp;
+static void disposegrp(grp_st *agrp)
 {
     grp_st *tmp;
 
@@ -1111,9 +1102,7 @@ disposegrp(agrp)
   struct ref_st *nextref;
   }       ref_st;
 */
-static void
-disposetbl(atbl, btbl)
-    ref_st *atbl, *btbl;
+static void disposetbl(ref_st *atbl, ref_st *btbl)
 {
     ref_st *tmp;
 
@@ -1144,9 +1133,7 @@ cleanmem(mars_t* mars)
 /* ******************************************************************* */
 
 /* Remove trailing comment from str */
-static void
-nocmnt(str)
-    char   *str;
+static void nocmnt(char* str)
 {
     while (*str && (*str != com_sym))
         str++;
@@ -3057,7 +3044,8 @@ int main(int argc, char** argv) {
     amalgamate_pspaces(mars);   /* Share P-spaces with equal PINs */
 
     /* Fight rounds rounds. */
-    clock_t start_time = clock();
+    auto start = std::chrono::system_clock::now();
+
     for (i=0; i < mars->rounds; ++i) {
         int nalive;
         sim_clear_core(mars);
@@ -3074,14 +3062,10 @@ int main(int argc, char** argv) {
     }
     mars->seed = seed;
 
-    double diff_time = clock() - start_time;
-
-    double sec = diff_time / CLOCKS_PER_SEC;
-
-
+    auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
     output_results(mars);
 
-    printf("Time taken %lf seconds, %lf evals per second.\n", sec, (mars->rounds / sec));
+    std::cout << sec << " seconds, " << (mars->rounds / sec) << " evals per second" << std::endl;
     sim_free_bufs(mars);
     
     FREE(warriors);
