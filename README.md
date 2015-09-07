@@ -14,4 +14,5 @@ References:
 * Stochastic Superoptimization http://cs.stanford.edu/people/eschkufz/research/asplos291-schkufza.pdf
 * Stochastic Optimization of Floating-Point Programs with Tunable Precision http://cs.stanford.edu/people/eschkufz/research/pldi52-schkufza.pdf
 * exMARS http://corewar.co.uk/ankerl/exmars.htm
+* yace http://corewar.co.uk/ankerl/yace.htm
 * An Introduction to MCMC for Machine Learning http://cis-linux1.temple.edu/~latecki/Courses/RobotFall07/PapersFall07/andrieu03introduction.pdf
