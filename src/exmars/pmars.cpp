@@ -768,7 +768,7 @@ uChar skip_space(char* str, uChar i)
 
 void to_upper(char* str)
 {
-    while ((*str = toupper_(*str)) != '\0')
+    while ((*str = (char)toupper_(*str)) != '\0')
         str++;
 }
 
@@ -1001,7 +1001,7 @@ static void addline(mars_t* mars, char* vline, src_st* src, uShrt lspnt)
     line_st *temp;
     if ((temp = (line_st *) MALLOC(sizeof(line_st))) != NULL) {
         if ((temp->vline = pstrdup(vline)) != NULL) {
-            temp->dbginfo = (mars->dbginfo ? TRUE : FALSE);
+            temp->dbginfo = (FIELD_T)(mars->dbginfo ? TRUE : FALSE);
             temp->linesrc = src;
             temp->nextline = NULL;
             if (mars->sline[lspnt])                /* First come first serve */
@@ -1310,7 +1310,7 @@ errprn(mars_t* mars, errType code, line_st* aline, const char* arg)
             textout(mars->outs);
             mars->errkeep[mars->ierr].num = 1;
             mars->errkeep[mars->ierr].loc = aline->linesrc->loc;
-            mars->errkeep[mars->ierr++].code = code;
+            mars->errkeep[mars->ierr++].code = (uShrt)code;
         } else
             mars->errkeep[i].num++;
     } else {
