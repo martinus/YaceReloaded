@@ -3081,7 +3081,7 @@ int main(int argc, char** argv) {
 
     output_results(mars);
 
-    printf("Time taken %lf seconds", sec);
+    printf("Time taken %lf seconds, %lf evals per second.\n", sec, (mars->rounds / sec));
     sim_free_bufs(mars);
     
     FREE(warriors);

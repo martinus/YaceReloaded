@@ -62,7 +62,7 @@ typedef long s32_t;
 
 /*  u16_t: coresize 0..65535
   u32_t: coresize 0..4294967295 */
-typedef u16_t field_t;
+typedef u32_t field_t;
 
 typedef struct pspace_st {
     field_t* mem;       /* current p-space locations 1..PSPACESIZE-1. unit offset array. */
@@ -74,7 +74,7 @@ typedef struct pspace_st {
 /* Instructions in core: */
 typedef struct insn_st {
     field_t a, b;               /* a-value, b-value */
-    u16_t in;                   /* flags, opcode, modifier, a- and b-modes */
+    u32_t in;                   /* flags, opcode, modifier, a- and b-modes */
 } insn_t;
 
 /* Warrior data struct */

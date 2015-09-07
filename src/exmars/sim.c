@@ -204,7 +204,7 @@ sim_load_warrior(mars_t* mars, unsigned int pos, const insn_t * const code, unsi
 {
     unsigned int i;
     u32_t k;
-    u16_t in;
+    u32_t in;
     u32_t coresize = mars->coresize;
     insn_t* coreMem = mars->coreMem;
     
@@ -648,6 +648,7 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         mode = in & mMASK;
 
         /* a-mode calculation */
+        /* this if cascade is 12% faster than a switch */
         if (mode == EX_IMMEDIATE) {
             /*printf("IMMEDIATE\n");*/
             ra_b = rb_b;
