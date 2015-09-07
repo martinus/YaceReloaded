@@ -17,9 +17,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "exhaust.h"
-#include "sim.h"
-#include "insn.h"
+#include <exmars/exhaust.h>
+#include <exmars/sim.h>
+#include <exmars/insn.h>
 
 /* Should we strip flags from instructions when loading?  By default,
    yes.  If so, then the simulator won't bother masking them off.  */
@@ -203,7 +203,7 @@ int
 sim_load_warrior(mars_t* mars, unsigned int pos, const insn_t * const code, unsigned int len)
 {
     unsigned int i;
-    field_t k;
+    u32_t k;
     u16_t in;
     u32_t coresize = mars->coresize;
     insn_t* coreMem = mars->coreMem;

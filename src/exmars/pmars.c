@@ -31,10 +31,6 @@
 #include <exmars/insn.h>
 
 #define concat(a,b) (strlen(a)+strlen(b)<MAXALLCHAR?pstrcat((a),(b)):NULL)
-#ifndef min
-#define min(x,y) ((x)<(y) ? (x) : (y))
-#endif
-
 
 /**************************** config **********************************/
 #define NEW_OPCODES
@@ -63,6 +59,11 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdlib.h>
+
+#ifndef min
+#define min(x,y) ((x)<(y) ? (x) : (y))
+#endif
+
 
 /* *********************************************************************
    System dependent definitions or declarations
@@ -2328,7 +2329,7 @@ void encode_warrior(mars_t* mars, warrior_struct* w, uShrt sspnt)
 
 int assemble_warrior(mars_t* mars, char* fName, warrior_struct* w)
 {
-    FILE   *infp;
+    FILE   *infp = 0;
     uChar   cont = TRUE, conLine = FALSE, i;
     uShrt   lines;                /* logical and physical lines */
     uShrt   spnt = 0;                /* index/pointer to sline and lline */
@@ -3056,6 +3057,7 @@ int main(int argc, char** argv) {
     amalgamate_pspaces(mars);   /* Share P-spaces with equal PINs */
 
     /* Fight rounds rounds. */
+    clock_t start_time = clock();
     for (i=0; i < mars->rounds; ++i) {
         int nalive;
         sim_clear_core(mars);
@@ -3072,8 +3074,14 @@ int main(int argc, char** argv) {
     }
     mars->seed = seed;
 
+    double diff_time = clock() - start_time;
+
+    double sec = diff_time / CLOCKS_PER_SEC;
+
 
     output_results(mars);
+
+    printf("Time taken %lf seconds", sec);
     sim_free_bufs(mars);
     
     FREE(warriors);

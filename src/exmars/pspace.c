@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
-#include "exhaust.h"
-#include "pspace.h"
+#include <exmars/exhaust.h>
+#include <exmars/pspace.h>
 
 field_t
 pspace_get(const pspace_t *p, u32_t paddr)
