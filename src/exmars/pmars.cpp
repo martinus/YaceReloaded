@@ -33,6 +33,8 @@
 #include <chrono>
 #include <iostream>
 
+#include <omp.h>
+
 #define concat(a,b) (strlen(a)+strlen(b)<MAXALLCHAR?pstrcat((a),(b)):NULL)
 
 /**************************** config **********************************/
@@ -2632,6 +2634,12 @@ void accumulate_results(mars_t* mars)
     }
 }
 
+void accumulate_results(mars_t* source, mars_t* target) {
+    for (u32_t i = 0; i<source->nWarriors * (source->nWarriors + 1); i++) {
+        target->results[i] += source->results[i];
+    }
+}
+
 void output_results(mars_t* mars)
 {
     unsigned int i;
@@ -2911,7 +2919,7 @@ mars_t* init(int argc, char** argv) {
     mars->coresize = 8000;
     mars->processes = 8000;
     mars->maxWarriorLength = 100;
-    mars->seed = rng((s32_t)time(0)*0x1d872b41);
+    //mars->seed = rng((s32_t)time(0)*0x1d872b41);
     mars->minsep = 100;
     mars->nWarriors = 2;
     /* pmars */
@@ -2982,7 +2990,97 @@ void pmars2exhaust(mars_t* mars, warrior_struct** warriors, int wCount)
 }
 
 
+#include <vector>
+#include <thread>
+
 int main(int argc, char** argv) {
+    const int numThreads = std::thread::hardware_concurrency();
+    std::cout << "using " << numThreads << " threads" << std::endl;
+
+    // create mars
+    std::vector<mars_t*> mars(numThreads);
+#pragma omp parallel for
+    for (int i = 0; i < numThreads; ++i) {
+        mars[i] = init(argc, argv);
+    }
+
+    // load warriors into pmars data structure */
+    warriorNames_t* currWarrior = mars[0]->warriorNames;
+    warrior_struct** warriors = (warrior_struct**)malloc(sizeof(warrior_struct*)*mars[0]->nWarriors);
+    u32_t i = 0;
+    while (currWarrior != NULL)
+    {
+        warrior_struct* w = (warrior_struct*)MALLOC(sizeof(warrior_struct));
+        warriors[i] = w;
+
+        memset(w, 0, sizeof(warrior_struct));
+        if (assemble_warrior(mars[0], currWarrior->warriorName, w)) {
+            printf("can not load warrior '%s'\n", w->fileName);
+        }
+        currWarrior = currWarrior->next;
+        ++i;
+    }
+
+    // convert warriors
+    omp_set_num_threads(numThreads);
+
+    u32_t seed = 0;
+    if (mars[0]->fixedPosition) {
+        seed = mars[0]->fixedPosition - mars[0]->minsep;
+    }
+    else {
+        seed = rng((s32_t)time(0) * 0x1d872b41);
+        seed = rng(seed);
+    }
+
+    auto start = std::chrono::system_clock::now();
+
+#pragma omp parallel for
+    for (int i = 0; i < numThreads; ++i) {
+        pmars2exhaust(mars[i], warriors, mars[0]->nWarriors);
+        check_sanity(mars[i]);
+        clear_results(mars[i]);
+
+        save_pspaces(mars[i]);
+        amalgamate_pspaces(mars[i]);   /* Share P-spaces with equal PINs */
+    }
+
+    // precompute all seeds
+    std::vector<u32_t> seeds;
+    for (u32_t i = 0; i < mars[0]->rounds; ++i) {
+        seeds.push_back(seed);
+        seed = compute_positions(seed, mars[0]);
+    }
+
+#pragma omp parallel for
+    for (int i = 0; i < (int)mars[0]->rounds; ++i) {
+        int thread = omp_get_thread_num();
+        sim_clear_core(mars[thread]);
+
+        seed = compute_positions(seeds[i], mars[thread]);
+        load_warriors(mars[thread]);
+        set_starting_order(i, mars[thread]);
+
+        int nalive = sim_mw(mars[thread], mars[thread]->startPositions, mars[thread]->deaths);
+        if (nalive<0)
+            panic("simulator panic!\n");
+
+        accumulate_results(mars[thread]);
+    }
+
+    // accumulate all results into mars[0]
+    for (int i = 1; i < numThreads; ++i) {
+        accumulate_results(mars[i], mars[0]);
+    }
+
+    auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
+    output_results(mars[0]);
+
+    //std::cout << sec << " seconds, " << (mars[0]->rounds / sec) << " evals per second" << std::endl;
+}
+
+
+int oldmain(int argc, char** argv) {
     u32_t i, seed;
     warriorNames_t* currWarrior;
     warrior_struct** warriors;
@@ -3030,21 +3128,22 @@ int main(int argc, char** argv) {
     }
 #endif
     /* fight! */
-    
+    auto start = std::chrono::system_clock::now();
+
     check_sanity(mars);
     clear_results(mars);
 
     if (mars->fixedPosition) {
         seed = mars->fixedPosition - mars->minsep;
     } else {
-        seed = rng(mars->seed);
+        seed = rng((s32_t)time(0) * 0x1d872b41);
+        seed = rng(seed);
     }
 
     save_pspaces(mars);
     amalgamate_pspaces(mars);   /* Share P-spaces with equal PINs */
 
     /* Fight rounds rounds. */
-    auto start = std::chrono::system_clock::now();
 
     for (i=0; i < mars->rounds; ++i) {
         int nalive;
@@ -3060,7 +3159,7 @@ int main(int argc, char** argv) {
 
         accumulate_results(mars);
     }
-    mars->seed = seed;
+    //mars->seed = seed;
 
     auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
     output_results(mars);

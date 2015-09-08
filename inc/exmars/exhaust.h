@@ -275,7 +275,7 @@ typedef struct mars_st {
     uShrt dspnt;
     line_st *aline;
     
-    s32_t seed;
+    //s32_t seed;
     int dbgproceed;
 } mars_t;
 
