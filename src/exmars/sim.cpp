@@ -21,6 +21,8 @@
 #include <exmars/sim.h>
 #include <exmars/insn.h>
 
+#include <iostream>
+
 /* Should we strip flags from instructions when loading?  By default,
    yes.  If so, then the simulator won't bother masking them off.  */
 #ifndef SIM_STRIP_FLAGS
@@ -150,7 +152,11 @@ int sim_alloc_bufs(mars_t* mars) {
         u32_t i;
         memset(mars->pspacesOrigin, 0, sizeof(pspace_t*)*mars->nWarriors);
         for (i=0; i<mars->nWarriors; ++i) {
-            if (!(mars->pspacesOrigin[i] = pspace_alloc(mars->pspaceSize))) return 0;
+            pspace_t* p = pspace_alloc(mars->pspaceSize);
+            mars->pspacesOrigin[i] = p;
+            if (!p) {
+                return 0;
+            }
         }
         sim_clear_pspaces(mars);
     }
@@ -618,36 +624,33 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
      * Main loop - optimize here
      */
     do {
+
+        insn_t* ip = *w->head;
+        if (++w->head == queue_end) {
+            w->head = queue_start;
+        }
+
         /* 'in' field of current insn for decoding */
-        u32_t in;
-
-        /* A register values */
-        field_t ra_a, ra_b;
-
-        /* B register values */
-        field_t rb_a, rb_b;
-
-        insn_t *pta;
-        insn_t *ptb;
-        unsigned int mode;
-
-        insn_t* ip = *(w->head);
-        if ( ++(w->head) == queue_end ) w->head = queue_start;
-        in = ip->in;        /* note: flags must be unset! */
+        const u32_t in = ip->in;        /* note: flags must be unset! */
 #if !SIM_STRIP_FLAGS
         in = in & iMASK;        /* strip flags. */
 #endif
-        rb_a = ra_a = ip->a;
-        rb_b = ip->b;
+        field_t ra_a = ip->a;
+
+        /* B register values */
+        field_t rb_a = ra_a;
+        field_t rb_b = ip->b;
 
 #if DEBUG >= 1
         insn = *ip;
         dis1( debug_line, insn, coresize);
 #endif
 
-        mode = in & mMASK;
+        auto mode = in & mMASK;
 
         /* a-mode calculation */
+        field_t ra_b;
+        insn_t *pta;
         /* this if cascade is 12% faster than a switch */
         if (mode == EX_IMMEDIATE) {
             /*printf("IMMEDIATE\n");*/
@@ -705,6 +708,7 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         mode = in & (mMASK<<mBITS);
 
         /* special mov.i code to improve performance */
+        insn_t *ptb;
         if ((in & 16320) == (_OP(EX_MOV, EX_mI) << (mBITS*2))) {
             if (mode == EX_DIRECT<<mBITS) {             
                 /*++modes[1];*/
