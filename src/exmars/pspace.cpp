@@ -44,6 +44,7 @@ pspace_alloc(u32_t pspacesize)
         if (!( p->ownmem = (field_t*)malloc(sizeof(field_t)*p->len))) {
             pspace_free(p);
             p = NULL;
+            return p;
         }
         p->mem = p->ownmem;
     }
