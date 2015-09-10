@@ -2995,7 +2995,7 @@ void pmars2exhaust(mars_t* mars, warrior_struct** warriors, int wCount)
 
 int main(int argc, char** argv) {
     const int numThreads = std::thread::hardware_concurrency();
-    std::cout << "using " << numThreads << " threads" << std::endl;
+    //std::cout << "using " << numThreads << " threads" << std::endl;
 
     // create mars
     std::vector<mars_t*> mars(numThreads);
@@ -3011,6 +3011,10 @@ int main(int argc, char** argv) {
     while (currWarrior != NULL)
     {
         warrior_struct* w = (warrior_struct*)MALLOC(sizeof(warrior_struct));
+        if (!w) {
+            printf("COULD NOT CREATE WARRIORS\n");
+            return -1;
+        }
         warriors[i] = w;
 
         memset(w, 0, sizeof(warrior_struct));
@@ -3052,7 +3056,8 @@ int main(int argc, char** argv) {
         seed = compute_positions(seed, mars[0]);
     }
 
-#pragma omp parallel for
+// use dynamic scheduling because sim_mw is usually quite slow, but takes different times.
+#pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)mars[0]->rounds; ++i) {
         int thread = omp_get_thread_num();
         sim_clear_core(mars[thread]);
@@ -3062,7 +3067,7 @@ int main(int argc, char** argv) {
         set_starting_order(i, mars[thread]);
 
         int nalive = sim_mw(mars[thread], mars[thread]->startPositions, mars[thread]->deaths);
-        if (nalive<0)
+        if (nalive < 0)
             panic("simulator panic!\n");
 
         accumulate_results(mars[thread]);
@@ -3076,7 +3081,7 @@ int main(int argc, char** argv) {
     auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
     output_results(mars[0]);
 
-    //std::cout << sec << " seconds, " << (mars[0]->rounds / sec) << " evals per second" << std::endl;
+    std::cout << sec << " seconds, " << (mars[0]->rounds / sec) << " evals per second" << std::endl;
 }
 
 
