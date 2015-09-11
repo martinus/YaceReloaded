@@ -522,6 +522,7 @@ sim_mw(mars_t* mars, const field_t *const war_pos_tab, u32_t* death_tab)
 int
 sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
 {
+    //extern Stats global_stats;
     /*
      * Core and Process queue memories.
      *
@@ -656,40 +657,22 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             /*printf("IMMEDIATE\n");*/
             ra_b = rb_b;
             pta = ip;
+            //++global_stats.ex_immediate;
         } else if (mode == EX_DIRECT) {
             /*printf("DIRECT\n");*/
             pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
             ra_a = pta->a;
             ra_b = pta->b;
-        } else if (mode == EX_BINDIRECT) {
-            /*printf("BINDIRECT\n");*/
-            pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
-            pta = pta + pta->b; if (pta >= CoreEnd) pta -= coresize;
-            ra_a = pta->a;      /* read in registers */
-            ra_b = pta->b;
-        } else if (mode == EX_APOSTINC) {
-            /*printf("APOSTINC\n");*/
-            pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
-            {field_t* f = &(pta->a);
-                pta = pta + pta->a; if (pta >= CoreEnd) pta -= coresize;
-                ra_a = pta->a;      /* read in registers */
-                ra_b = pta->b;
-                INCMOD(*f);}
+            //++global_stats.ex_direct;
         } else if (mode == EX_BPOSTINC) {
             /*printf("BPOSTINC\n");*/
             pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
             {field_t* f = &(pta->b);
-                pta = pta + pta->b; if (pta >= CoreEnd) pta -= coresize;
-                ra_a = pta->a;      /* read in registers */
-                ra_b = pta->b;
-                INCMOD(*f);}
-        } else if (mode == EX_APREDEC) {
-            /*printf("APREDEC\n");*/
-            pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
-            DECMOD(pta->a);
-            pta = pta + pta->a; if (pta >= CoreEnd) pta -= coresize;
+            pta = pta + pta->b; if (pta >= CoreEnd) pta -= coresize;
             ra_a = pta->a;      /* read in registers */
             ra_b = pta->b;
+            INCMOD(*f); }
+            //++global_stats.ex_bpostinc;
         } else if (mode == EX_BPREDEC) {
             /*printf("BPREDEC\n");*/
             pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
@@ -697,12 +680,38 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             pta = pta + pta->b; if (pta >= CoreEnd) pta -= coresize;
             ra_a = pta->a;      /* read in registers */
             ra_b = pta->b;
+            //++global_stats.ex_bpredec;
+        } else if (mode == EX_BINDIRECT) {
+            /*printf("BINDIRECT\n");*/
+            pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
+            pta = pta + pta->b; if (pta >= CoreEnd) pta -= coresize;
+            ra_a = pta->a;      /* read in registers */
+            ra_b = pta->b;
+            //++global_stats.ex_bindirect;
+        } else if (mode == EX_APOSTINC) {
+            /*printf("APOSTINC\n");*/
+            pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
+            {field_t* f = &(pta->a);
+            pta = pta + pta->a; if (pta >= CoreEnd) pta -= coresize;
+            ra_a = pta->a;      /* read in registers */
+            ra_b = pta->b;
+            INCMOD(*f); }
+            //++global_stats.ex_apostinc;
+        } else if (mode == EX_APREDEC) {
+            /*printf("APREDEC\n");*/
+            pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
+            DECMOD(pta->a);
+            pta = pta + pta->a; if (pta >= CoreEnd) pta -= coresize;
+            ra_a = pta->a;      /* read in registers */
+            ra_b = pta->b;
+            //++global_stats.ex_apredec;
         } else { /* AINDIRECT */
             /*printf("AINDIRECT\n");*/
             pta = ip + ra_a; if (pta >= CoreEnd) pta -= coresize;
             pta = pta + pta->a; if (pta >= CoreEnd) pta -= coresize;
             ra_a = pta->a;      /* read in registers */
             ra_b = pta->b;
+            //++global_stats.ex_aindirect;
         }
 
         mode = in & (mMASK<<mBITS);
@@ -710,42 +719,55 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         /* special mov.i code to improve performance */
         insn_t *ptb;
         if ((in & 16320) == (_OP(EX_MOV, EX_mI) << (mBITS*2))) {
-            if (mode == EX_DIRECT<<mBITS) {             
+            if (mode == EX_DIRECT<<mBITS) {
+                //++global_stats.ex_direct;
                 /*++modes[1];*/
-                /* 150886214*/  ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
+                /* 150886214*/  
+                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_BPOSTINC<<mBITS) {
+                //++global_stats.ex_bpostinc;
                 /*++modes[5];*/
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 {field_t* f = &(ptb->b);
-                    ptb = ptb + *f; if (ptb >= CoreEnd) ptb -= coresize;
-                    /*  92075270*/  INCMOD(*f);}
+                ptb = ptb + *f; if (ptb >= CoreEnd) ptb -= coresize;
+                /*  92075270*/
+                INCMOD(*f);}
             } else if (mode == EX_AINDIRECT<<mBITS) {
+                //++global_stats.ex_aindirect;
                 /*++modes[7];*/
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
-                /*  39436060*/  ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
+                /*  39436060*/  
+                ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_APOSTINC<<mBITS) {
+                //++global_stats.ex_apostinc;
                 /*++modes[2];*/
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 {field_t* f = &(ptb->a);
-                    ptb = ptb + *f; if (ptb >= CoreEnd) ptb -= coresize;
-                    /*  32635122*/  INCMOD(*f);}
+                ptb = ptb + *f; if (ptb >= CoreEnd) ptb -= coresize;
+                /*  32635122*/
+                INCMOD(*f);}
             } else if (mode == EX_APREDEC<<mBITS) {
+                //++global_stats.ex_apredec;
                 /*++modes[0];*/
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 DECMOD(ptb->a);
                 /*  19211424*/  ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_BPREDEC<<mBITS) {
+                //++global_stats.ex_bpredec;
                 /*++modes[3];*/
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 DECMOD(ptb->b);
                 /*  11269800*/  ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_BINDIRECT<<mBITS) {
+                //++global_stats.ex_bindirect;
                 /*++modes[6];*/
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 /*  8582998*/   ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
             } else { /* EX_IMMEDIATE */
+                //++global_stats.ex_immediate;
                 /*++modes[4];*/
-                /*      1446*/  ptb = ip;
+                /*      1446*/ 
+                ptb = ip;
             }
             ptb->a = ra_a;
             ptb->b = ra_b;
@@ -763,23 +785,30 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
          */
         if (!(in & 15360)) {
             /* DAT or SPL */
-            if (mode == EX_IMMEDIATE<<mBITS) {
-            } else if (mode == EX_DIRECT<<mBITS) {
+            if (!(mode & (4 << mBITS))) {
+                // checks EX_DIRECT, EX_IMMEDIATE, EX_BINDIRECT, EX_AINDIRECT
+                //++global_stats.ex_direct;
+                //++global_stats.ex_immediate;
             } else if (mode == EX_BPOSTINC<<mBITS) {
+                //++global_stats.ex_bpostinc;
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 INCMOD(ptb->b);
             } else if (mode == EX_BPREDEC<<mBITS) {
+                //++global_stats.ex_bpredec;
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 DECMOD(ptb->b);
             } else if (mode == EX_APREDEC<<mBITS) {
+                //++global_stats.ex_apredec;
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 DECMOD(ptb->a);
             } else if (mode == EX_APOSTINC<<mBITS) {
+                //++global_stats.ex_apostinc;
                 ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 INCMOD(ptb->a);
-            } /* BINDIRECT, AINDIRECT */
+            } 
 
             if (in & 512) {
+                //++global_stats.spl;
                 /* SPL */
                 IPINCMOD(ip);
                 queue(ip);
@@ -802,6 +831,7 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             else {
                 /* DAT */
             die:
+                //++global_stats.dat;
                 if (--w->nprocs) goto noqueue;
                 w->pred->succ = w->succ;
                 w->succ->pred = w->pred;

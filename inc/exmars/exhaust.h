@@ -53,12 +53,14 @@ enum {
 };
 #endif
 
+#include <cstdint>
+
 /* exhaust typedefs */
 /* misc. integral types */
-typedef unsigned char u8_t;
-typedef unsigned short u16_t;
-typedef unsigned long u32_t;
-typedef long s32_t;
+typedef uint_fast8_t u8_t;
+typedef uint_fast16_t u16_t;
+typedef uint_fast32_t u32_t;
+typedef int_fast32_t s32_t;
 
 /*  u16_t: coresize 0..65535
   u32_t: coresize 0..4294967295 */
@@ -310,5 +312,51 @@ extern const char expr_sym[];
 extern const char *modname[];
 extern const char *swname[];
 extern const char *opname[];
+
+
+#include <iostream>
+
+struct Stats {
+    unsigned long ex_immediate;
+    unsigned long ex_direct;
+    unsigned long ex_bindirect;
+    unsigned long ex_apostinc;
+    unsigned long ex_bpostinc;
+    unsigned long ex_apredec;
+    unsigned long ex_bpredec;
+    unsigned long ex_aindirect;
+    unsigned long spl;
+    unsigned long dat;
+
+    Stats()
+        : ex_immediate(0)
+        , ex_direct(0)
+        , ex_bindirect(0)
+        , ex_apostinc(0)
+        , ex_bpostinc(0)
+        , ex_apredec(0)
+        , ex_bpredec(0)
+        , ex_aindirect(0)
+        , dat(0)
+        , spl(0)
+    {
+    }
+
+    void print() {
+        /*
+        std::cout << ex_immediate << " ";
+        std::cout << ex_direct << " ";
+        std::cout << ex_bindirect << " ";
+        std::cout << ex_apostinc << " ";
+        std::cout << ex_bpostinc << " ";
+        std::cout << ex_apredec << " ";
+        std::cout << ex_bpredec << " ";
+        std::cout << ex_aindirect << " ";
+        */
+        std::cout << spl << " ";
+        std::cout << dat << " ";
+        std::cout << std::endl;
+    }
+};
 
 #endif /* EXHAUST_H */

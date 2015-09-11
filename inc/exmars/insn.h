@@ -58,14 +58,14 @@ enum ex_modifier {
     EX_mF, EX_mA, EX_mB, EX_mAB, EX_mBA, EX_mX, EX_mI   /* 7 */
 };
 
-enum ex_addr_mode {             /* must start from 0,
-                                   the ordering is important */
+enum ex_addr_mode {
+    /* must start from 0, the ordering is important */
     EX_DIRECT,  /* $ */
     EX_IMMEDIATE, /* # */
     EX_BINDIRECT,   /* @ */
+    EX_AINDIRECT,   /* * */
     EX_BPREDEC, /* < */
     EX_BPOSTINC,    /* > */
-    EX_AINDIRECT,   /* * */
     EX_APREDEC, /* { */
     EX_APOSTINC /* } */   /* 8 */
 };

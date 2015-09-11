@@ -69,6 +69,7 @@
 #define min(x,y) ((x)<(y) ? (x) : (y))
 #endif
 
+Stats global_stats;
 
 /* *********************************************************************
    System dependent definitions or declarations
@@ -3091,8 +3092,8 @@ int main(int argc, char** argv) {
 
     auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
     output_results(mars[0]);
-
-    std::cout << sec << " seconds, " << (mars[0]->rounds / sec) << " evals per second" << std::endl;
+    //global_stats.print();
+    //std::cout << sec << " seconds, " << (mars[0]->rounds / sec) << " evals per second" << std::endl;
 }
 
 
@@ -3178,9 +3179,9 @@ int oldmain(int argc, char** argv) {
     //mars->seed = seed;
 
     auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
-    output_results(mars);
+    //output_results(mars);
 
-    std::cout << sec << " seconds, " << (mars->rounds / sec) << " evals per second" << std::endl;
+    //std::cout << sec << " seconds, " << (mars->rounds / sec) << " evals per second" << std::endl;
     sim_free_bufs(mars);
     
     FREE(warriors);
