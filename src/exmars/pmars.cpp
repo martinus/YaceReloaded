@@ -2545,9 +2545,9 @@ void panic(char *msg)
 void usage(void)
 {
     printf("exmasr v%d.%d\n", VERSION, REVISION );
-    printf("usage: exhaust [opts] warriors...\n");
+    printf("usage: exMARS [opts] warriors...\n");
     printf("opts: -r <rounds>, -c <cycles>, -F <pos>, -s <coresize>,\n"
-           "      -p <maxprocs>, -d <minsep>, -bk\n");
+           "      -p <maxprocs>, -d <minsep>, -l <maxlength> -bk\n");
     exit(1);
 }
 
@@ -2843,6 +2843,15 @@ void readargs(int argc, char** argv, mars_t* mars) {
                             panic( "core size must be > 0\n");
                         break;
 
+                    case 'l':
+                        if (n == argc - 1 || !isdigit(argv[n + 1][0]))
+                            panic("bad argument for option -s\n");
+                        c = 0;
+                        mars->maxWarriorLength = atoi(argv[++n]);
+                        if (mars->maxWarriorLength <= 0)
+                            panic("warrior length must be > 0\n");
+                        break;
+
                     case 'd':
                         if ( n == argc-1 || !isdigit(argv[n+1][0]) )
                             panic( "bad argument for option -d\n");
@@ -2904,9 +2913,6 @@ void readargs(int argc, char** argv, mars_t* mars) {
         }
         n++;
     }
-
-    if ( mars->nWarriors == 0 )
-        usage();
 }
 
 
@@ -3002,6 +3008,11 @@ int main(int argc, char** argv) {
 #pragma omp parallel for
     for (int i = 0; i < numThreads; ++i) {
         mars[i] = init(argc, argv);
+    }
+
+    if (!mars[0]->nWarriors) {
+        usage();
+        return -1;
     }
 
     // load warriors into pmars data structure */
