@@ -2995,6 +2995,7 @@ void pmars2exhaust(mars_t* mars, warrior_struct** warriors, int wCount)
 
 int main(int argc, char** argv) {
     const int numThreads = std::thread::hardware_concurrency();
+    //const int numThreads = 1;
     //std::cout << "using " << numThreads << " threads" << std::endl;
 
     // create mars

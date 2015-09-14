@@ -53,12 +53,14 @@ enum {
 };
 #endif
 
+#include <cstdint>
+
 /* exhaust typedefs */
 /* misc. integral types */
 typedef unsigned char u8_t;
-typedef unsigned short u16_t;
-typedef unsigned long u32_t;
-typedef long s32_t;
+typedef uint_fast16_t u16_t;
+typedef uint_fast32_t u32_t;
+typedef int_fast32_t s32_t;
 
 /*  u16_t: coresize 0..65535
   u32_t: coresize 0..4294967295 */
