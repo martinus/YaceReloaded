@@ -522,9 +522,10 @@ sim_mw(mars_t* mars, const field_t *const war_pos_tab, u32_t* death_tab)
 
 // Benchmarks
 // 12091 rounds per second (using 500 measurements, 77 outliers, 423 ok)
-// 12491 rounds per second (using 500 measurements, 488 outliers, 12 ok)
+// 12336 rounds per second(using 1000 measurements, 989 outliers, 11 ok)
 //   replaced "goto noqueue" with continue
-
+// 12491 rounds per second(using 1000 measurements, 979 outliers, 21 ok)
+//   minor DAT & SPL optimization
 int
 sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
 {

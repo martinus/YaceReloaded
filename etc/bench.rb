@@ -4,7 +4,7 @@ w1 = "warriors/94nop/recon2.red"
 w2 = "warriors/94nop/QuickSilver.red"
 
 rounds = 1000
-measurements = 500
+measurements = 1000
 
 #app = "pmars-server.exe"
 #app = "C:\\martin\\dev\\YaceReloaded\\vs\\x64\\Release\\YaceReloaded.exe"
