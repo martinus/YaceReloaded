@@ -69,6 +69,7 @@
 #define min(x,y) ((x)<(y) ? (x) : (y))
 #endif
 
+Stats global_stats;
 
 /* *********************************************************************
    System dependent definitions or declarations
@@ -2545,9 +2546,9 @@ void panic(char *msg)
 void usage(void)
 {
     printf("exmasr v%d.%d\n", VERSION, REVISION );
-    printf("usage: exhaust [opts] warriors...\n");
+    printf("usage: exMARS [opts] warriors...\n");
     printf("opts: -r <rounds>, -c <cycles>, -F <pos>, -s <coresize>,\n"
-           "      -p <maxprocs>, -d <minsep>, -bk\n");
+           "      -p <maxprocs>, -d <minsep>, -l <maxlength> -bk\n");
     exit(1);
 }
 
@@ -2843,6 +2844,15 @@ void readargs(int argc, char** argv, mars_t* mars) {
                             panic( "core size must be > 0\n");
                         break;
 
+                    case 'l':
+                        if (n == argc - 1 || !isdigit(argv[n + 1][0]))
+                            panic("bad argument for option -s\n");
+                        c = 0;
+                        mars->maxWarriorLength = atoi(argv[++n]);
+                        if (mars->maxWarriorLength <= 0)
+                            panic("warrior length must be > 0\n");
+                        break;
+
                     case 'd':
                         if ( n == argc-1 || !isdigit(argv[n+1][0]) )
                             panic( "bad argument for option -d\n");
@@ -2904,9 +2914,6 @@ void readargs(int argc, char** argv, mars_t* mars) {
         }
         n++;
     }
-
-    if ( mars->nWarriors == 0 )
-        usage();
 }
 
 
@@ -3005,6 +3012,11 @@ int main(int argc, char** argv) {
         mars[i] = init(argc, argv);
     }
 
+    if (!mars[0]->nWarriors) {
+        usage();
+        return -1;
+    }
+
     // load warriors into pmars data structure */
     warriorNames_t* currWarrior = mars[0]->warriorNames;
     warrior_struct** warriors = (warrior_struct**)malloc(sizeof(warrior_struct*)*mars[0]->nWarriors);
@@ -3081,8 +3093,8 @@ int main(int argc, char** argv) {
 
     auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
     output_results(mars[0]);
-
-    std::cout << sec << " seconds, " << (mars[0]->rounds / sec) << " evals per second" << std::endl;
+    //global_stats.print();
+    //std::cout << sec << " seconds, " << (mars[0]->rounds / sec) << " evals per second" << std::endl;
 }
 
 
@@ -3168,9 +3180,9 @@ int oldmain(int argc, char** argv) {
     //mars->seed = seed;
 
     auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
-    output_results(mars);
+    //output_results(mars);
 
-    std::cout << sec << " seconds, " << (mars->rounds / sec) << " evals per second" << std::endl;
+    //std::cout << sec << " seconds, " << (mars->rounds / sec) << " evals per second" << std::endl;
     sim_free_bufs(mars);
     
     FREE(warriors);
