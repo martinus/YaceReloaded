@@ -519,6 +519,12 @@ sim_mw(mars_t* mars, const field_t *const war_pos_tab, u32_t* death_tab)
       : pspacesOrigin[(warid)]->lastresult )
 
 
+
+// Benchmarks
+// 12023.791717146547 rounds per second (using 500 measurements, 50 outliers ignored)
+// 12491.152100595407 rounds per second (using 500 measurements, 488 outliers, 12 ok)
+//   replaced "goto noqueue" with continue
+
 int
 sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
 {
@@ -774,7 +780,8 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             ptb->in = pta->in;
             IPINCMOD(ip);
             queue(ip);
-            goto noqueue;
+            w = w->succ;
+            continue;
         }
 
         
@@ -832,7 +839,10 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
                 /* DAT */
             die:
                 //++global_stats.dat;
-                if (--w->nprocs) goto noqueue;
+                if (--w->nprocs) {
+                    w = w->succ;
+                    continue;
+                }
                 w->pred->succ = w->succ;
                 w->succ->pred = w->pred;
                 *death_tab++ = w->id;
@@ -841,7 +851,8 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
                 if ( --alive_cnt <= 1 ) 
                     goto out;
             }
-            goto noqueue;
+            w = w->succ;
+            continue;
         }
 
 
@@ -939,14 +950,16 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             DECMOD(ptb->a);
             if ( rb_a == 1 ) break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
         case _OP(EX_DJN,EX_mAB):
         case _OP(EX_DJN,EX_mB):
             DECMOD(ptb->b);
             if ( rb_b == 1 ) break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
         case _OP(EX_DJN,EX_mX):
         case _OP(EX_DJN,EX_mI):
@@ -956,7 +969,8 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             /* if ( rb_a == 1 && rb_b == 1 ) break; */
             if ( rb_a == 1 && rb_b == 1 ) break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
 
         case _OP(EX_ADD, EX_mI):
@@ -983,14 +997,16 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             if ( rb_a )
                 break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
         case _OP(EX_JMZ, EX_mAB):
         case _OP(EX_JMZ, EX_mB):
             if ( rb_b )
                 break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
         case _OP(EX_JMZ, EX_mX):
         case _OP(EX_JMZ, EX_mF):
@@ -998,7 +1014,8 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             if ( rb_a || rb_b )
                 break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
 
         case _OP(EX_SUB, EX_mI):
@@ -1088,21 +1105,24 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             if (! rb_a )
                 break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
         case _OP(EX_JMN, EX_mAB):
         case _OP(EX_JMN, EX_mB):
             if (! rb_b )
                 break;
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
         case _OP(EX_JMN, EX_mX):
         case _OP(EX_JMN, EX_mF):
         case _OP(EX_JMN, EX_mI):
             if (rb_a || rb_b) {
                 queue(pta);
-                goto noqueue;
+                w = w->succ;
+                continue;
             }
             break;
 
@@ -1115,7 +1135,8 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         case _OP(EX_JMP, EX_mF):
         case _OP(EX_JMP, EX_mI):
             queue(pta);
-            goto noqueue;
+            w = w->succ;
+            continue;
 
 
 
@@ -1273,7 +1294,6 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
 
         IPINCMOD(ip);
         queue(ip);
-    noqueue:
         w = w->succ;
     } while(--cycles);
 
