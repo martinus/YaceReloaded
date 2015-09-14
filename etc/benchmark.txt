@@ -11,4 +11,7 @@ Benchmark Results
 	Without "schedule(dynamic)", 12% slower!
 	
 12650.471813772278 rounds per second (using 1000 measurements, 715 outliers, 285 ok
-	moved statement out of the mov.i switches
+	moved statement out of the mov.i switches: 1% faster
+
+12811.486901169752 rounds per second (using 1000 measurements, 979 outliers, 21 ok)
+	b-mode calculation extracted common function: 1% faster

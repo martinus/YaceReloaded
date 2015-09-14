@@ -846,21 +846,19 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
 
 
         /* b-mode calculation */
+        ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
         if (mode == EX_APREDEC<<mBITS) {
             /*printf("APREDEC\n");*/
-            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             DECMOD(ptb->a);
             ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
             rb_a = ptb->a;      /* read in registers */
             rb_b = ptb->b;
         } else if (mode == EX_DIRECT<<mBITS) {
             /*printf("DIRECT\n");*/
-            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             rb_a = ptb->a;
             rb_b = ptb->b;
         } else if (mode == EX_APOSTINC<<mBITS) {
             /*printf("APOSTINC\n");*/
-            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             {field_t* f = &(ptb->a);
                 ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
                 rb_a = ptb->a;      /* read in registers */
@@ -868,7 +866,6 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
                 INCMOD(*f);}
         } else if (mode == EX_BPREDEC<<mBITS) {
             /*printf("BPREDEC\n");*/
-            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             DECMOD(ptb->b);
             ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
             rb_a = ptb->a;      /* read in registers */
@@ -878,7 +875,6 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             ptb = ip;
         } else if (mode == EX_BPOSTINC<<mBITS) {
             /*printf("BPOSTINC\n");*/
-            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             {field_t* f = &(ptb->b);
                 ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
                 rb_a = ptb->a;      /* read in registers */
@@ -886,13 +882,11 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
                 INCMOD(*f);}
         } else if (mode == EX_BINDIRECT<<mBITS) {
             /*printf("BINDIRECT\n");*/
-            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
             rb_a = ptb->a;      /* read in registers */
             rb_b = ptb->b;
         } else { /* AINDIRECT */
             /*printf("AINDIRECT\n");*/
-            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
             rb_a = ptb->a;      /* read in registers */
             rb_b = ptb->b;
@@ -916,14 +910,17 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         case _OP(EX_MOV, EX_mA):
             ptb->a = ra_a;
             break;
+
         case _OP(EX_MOV, EX_mF):
             ptb->a = ra_a;
         case _OP(EX_MOV, EX_mB):
             ptb->b = ra_b;
             break;
+
         case _OP(EX_MOV, EX_mAB):
             ptb->b = ra_a;
             break;
+
         case _OP(EX_MOV, EX_mX):
             ptb->b = ra_a;
         case _OP(EX_MOV, EX_mBA):
@@ -933,6 +930,8 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         case _OP(EX_MOV, EX_mI):
             printf("unreachable code reached. You have a problem!\n");
             break;
+
+        // DJN
 
         case _OP(EX_DJN,EX_mBA):
         case _OP(EX_DJN,EX_mA):
@@ -961,6 +960,7 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             w = w->succ;
             continue;
 
+        // ADD
 
         case _OP(EX_ADD, EX_mI):
         case _OP(EX_ADD, EX_mF):
@@ -968,18 +968,22 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         case _OP(EX_ADD, EX_mA):
             ADDMOD(ptb->a, ra_a, rb_a );
             break;
+
         case _OP(EX_ADD, EX_mB):
             ADDMOD(ptb->b, ra_b, rb_b );
             break;
+
         case _OP(EX_ADD, EX_mX):
             ADDMOD(ptb->a, ra_b, rb_a );
         case _OP(EX_ADD, EX_mAB):
             ADDMOD(ptb->b, ra_a, rb_b );
             break;
+
         case _OP(EX_ADD, EX_mBA):
             ADDMOD(ptb->a, ra_b, rb_a );
             break;
 
+        // JMZ
 
         case _OP(EX_JMZ, EX_mBA):
         case _OP(EX_JMZ, EX_mA):

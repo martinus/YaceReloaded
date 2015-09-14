@@ -9,6 +9,7 @@ measurements = 1000
 #app = "pmars-server.exe"
 #app = "C:\\martin\\dev\\YaceReloaded\\vs\\x64\\Release\\YaceReloaded.exe"
 app = "C:\\dev\\YaceReloaded.git\\vs\\x64\\Release\\YaceReloaded.exe"
+#app = "C:\\dev\\YaceReloaded.git\\vs\\Release\\YaceReloaded.exe"
 
 cmd = "#{app} -bkF 4000 -r #{rounds} #{w1} #{w2} 2>nul"
 

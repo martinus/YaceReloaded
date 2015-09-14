@@ -315,6 +315,15 @@ extern const char *opname[];
 
 
 #include <iostream>
+#include <unordered_map>
+
+struct Val {
+    Val()
+        : v(0) {
+    }
+
+    size_t v;
+};
 
 struct Stats {
     unsigned long ex_immediate;
@@ -327,6 +336,8 @@ struct Stats {
     unsigned long ex_aindirect;
     unsigned long spl;
     unsigned long dat;
+
+    std::unordered_map<u32_t, Val> ops;
 
     Stats()
         : ex_immediate(0)
@@ -353,9 +364,13 @@ struct Stats {
         std::cout << ex_bpredec << " ";
         std::cout << ex_aindirect << " ";
         */
-        std::cout << spl << " ";
-        std::cout << dat << " ";
-        std::cout << std::endl;
+        //std::cout << spl << " ";
+        //std::cout << dat << " ";
+        //std::cout << std::endl;
+
+        for (auto it = ops.begin(); it != ops.end(); ++it) {
+            std::cout << it->first << " " << it->second.v << std::endl;
+        }
     }
 };
 
