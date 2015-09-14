@@ -1,0 +1,14 @@
+Benchmark Results
+
+12091 rounds per second (using 500 measurements, 77 outliers, 423 ok)
+12336 rounds per second(using 1000 measurements, 989 outliers, 11 ok)
+	replaced "goto noqueue" with continue
+
+12491 rounds per second (using 1000 measurements, 979 outliers, 21 ok)
+	minor DAT & SPL optimization
+
+11172.578255268369 rounds per second (using 1000 measurements, 150 outliers, 850 ok)	
+	Without "schedule(dynamic)", 12% slower!
+	
+12650.471813772278 rounds per second (using 1000 measurements, 715 outliers, 285 ok
+	moved statement out of the mov.i switches

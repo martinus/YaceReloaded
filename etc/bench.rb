@@ -47,19 +47,17 @@ end
 
 times = []
 printTime = Time.now
-mean = 0
-n = 0
 measurements.times do
-  t = Time.now
-  output = `#{cmd}`
-  diff = Time.now - t
-  
-  times.push(diff)
-  mean, n = mean_without_outliers(times, 3)
+  t1 = Time.now
+  `#{cmd}`
+  t2 = Time.now
+  times.push(t2 - t1)
   if printTime + 1 < Time.now
+    mean, n = mean_without_outliers(times, 3)
     puts "#{rounds/mean} rounds per second (using #{times.size} measurements, #{times.size - n} outliers, #{n} ok)"  
     printTime = Time.now
   end
 end
 puts "======"
+mean, n = mean_without_outliers(times, 3)
 puts "#{rounds/mean} rounds per second (using #{times.size} measurements, #{times.size - n} outliers, #{n} ok)"  

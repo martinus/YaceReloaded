@@ -726,53 +726,41 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         /* special mov.i code to improve performance */
         insn_t *ptb;
         if ((in & 16320) == (_OP(EX_MOV, EX_mI) << (mBITS*2))) {
+            ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             if (mode == EX_DIRECT<<mBITS) {
                 //++global_stats.ex_direct;
-                /*++modes[1];*/
                 /* 150886214*/  
-                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_BPOSTINC<<mBITS) {
                 //++global_stats.ex_bpostinc;
-                /*++modes[5];*/
-                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 {field_t* f = &(ptb->b);
                 ptb = ptb + *f; if (ptb >= CoreEnd) ptb -= coresize;
                 /*  92075270*/
                 INCMOD(*f);}
             } else if (mode == EX_AINDIRECT<<mBITS) {
                 //++global_stats.ex_aindirect;
-                /*++modes[7];*/
-                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 /*  39436060*/  
                 ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_APOSTINC<<mBITS) {
                 //++global_stats.ex_apostinc;
-                /*++modes[2];*/
-                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 {field_t* f = &(ptb->a);
                 ptb = ptb + *f; if (ptb >= CoreEnd) ptb -= coresize;
                 /*  32635122*/
                 INCMOD(*f);}
             } else if (mode == EX_APREDEC<<mBITS) {
                 //++global_stats.ex_apredec;
-                /*++modes[0];*/
-                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 DECMOD(ptb->a);
                 /*  19211424*/  ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_BPREDEC<<mBITS) {
                 //++global_stats.ex_bpredec;
-                /*++modes[3];*/
-                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
                 DECMOD(ptb->b);
-                /*  11269800*/  ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
+                /*  11269800*/ 
+                ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
             } else if (mode == EX_BINDIRECT<<mBITS) {
                 //++global_stats.ex_bindirect;
-                /*++modes[6];*/
-                ptb = ip + rb_b; if (ptb >= CoreEnd) ptb -= coresize;
-                /*  8582998*/   ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
+                /*  8582998*/  
+                ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
             } else { /* EX_IMMEDIATE */
                 //++global_stats.ex_immediate;
-                /*++modes[4];*/
                 /*      1446*/ 
                 ptb = ip;
             }
