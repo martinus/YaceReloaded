@@ -11,6 +11,7 @@
     <ClCompile Include="..\src\exmars\pspace.cpp">
       <Filter>exmars</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\FitnessEvaluator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="exmars">
@@ -33,5 +34,6 @@
     <ClInclude Include="..\inc\exmars\insn.h">
       <Filter>exmars</Filter>
     </ClInclude>
+    <ClInclude Include="..\inc\FitnessEvaluator.h" />
   </ItemGroup>
 </Project>

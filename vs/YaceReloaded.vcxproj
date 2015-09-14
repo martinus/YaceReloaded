@@ -155,6 +155,7 @@
     <ClCompile Include="..\src\exmars\pmars.cpp" />
     <ClCompile Include="..\src\exmars\pspace.cpp" />
     <ClCompile Include="..\src\exmars\sim.cpp" />
+    <ClCompile Include="..\src\FitnessEvaluator.cpp" />
     <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -163,6 +164,7 @@
     <ClInclude Include="..\inc\exmars\insn_help.h" />
     <ClInclude Include="..\inc\exmars\pspace.h" />
     <ClInclude Include="..\inc\exmars\sim.h" />
+    <ClInclude Include="..\inc\FitnessEvaluator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
