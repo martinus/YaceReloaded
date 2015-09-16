@@ -3000,7 +3000,98 @@ void pmars2exhaust(mars_t* mars, warrior_struct** warriors, int wCount)
 #include <vector>
 #include <thread>
 
+
+void eval(const int numThreads, std::vector<mars_t*>& mars, warrior_struct** warriors, const std::vector<u32_t>& seeds) {
+#pragma omp parallel for
+    for (int i = 0; i < numThreads; ++i) {
+        pmars2exhaust(mars[i], warriors, mars[0]->nWarriors);
+        check_sanity(mars[i]);
+        clear_results(mars[i]);
+
+        save_pspaces(mars[i]);
+        amalgamate_pspaces(mars[i]);   /* Share P-spaces with equal PINs */
+    }
+
+    // use dynamic scheduling because sim_mw is usually quite slow, but takes different times.
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < (int)mars[0]->rounds; ++i) {
+        int thread = omp_get_thread_num();
+        sim_clear_core(mars[thread]);
+
+        compute_positions(seeds[i], mars[thread]);
+        load_warriors(mars[thread]);
+        set_starting_order(i, mars[thread]);
+
+        int nalive = sim_mw(mars[thread], mars[thread]->startPositions, mars[thread]->deaths);
+        if (nalive < 0)
+            panic("simulator panic!\n");
+
+        accumulate_results(mars[thread]);
+    }
+
+    // accumulate all results into mars[0]
+    for (int i = 1; i < numThreads; ++i) {
+        accumulate_results(mars[i], mars[0]);
+    }
+}
+
+
+#include <algorithm>
+
+// We view our timing values as a series of random variables V that has been
+// contaminated with occasional outliers due to cache misses, thread
+// preemption, etcetera.To filter out the outliers, we search for the largest
+// subset of V such that all its values are within three standard deviations
+// of the mean.
+//
+// source: https://code.google.com/p/smhasher/source/browse/trunk/SpeedTest.cpp
+// https ://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
+void meanWithoutOutliers(
+    std::vector<double>& data, 
+    double maxStandardDeviationsFromMean,
+    double& mean,
+    size_t& n) {
+
+    std::sort(data.begin(), data.end());
+    n = 0;
+    mean = 0;
+    auto m2 = mean;
+
+    for (size_t i = 0; i < data.size(); ++i) {
+        auto x = data[i];
+        ++n;
+        const auto delta = x - mean;
+        mean += delta / n;
+        m2 += delta * (x - mean);
+
+        const auto variance = m2 / (n - 1);
+        const auto standardDeviation = std::sqrt(variance);
+        if (x > mean + standardDeviation * maxStandardDeviationsFromMean) {
+            // can't accept the number, remove it
+            mean -= delta / n;
+            --n;
+            return;
+        }
+    }
+}
+
+
+
 int main(int argc, char** argv) {
+    if (argc < 2) {
+        usage();
+        return -1;
+    }
+
+    const std::string cmd = argv[1];
+
+    bool isBenchmark = false;
+    if (cmd == "bench") {
+        isBenchmark = true;
+        --argc;
+        ++argv;
+    }
+
     const int numThreads = std::thread::hardware_concurrency();
     //const int numThreads = 1;
     //std::cout << "using " << numThreads << " threads" << std::endl;
@@ -3052,16 +3143,6 @@ int main(int argc, char** argv) {
 
     auto start = std::chrono::system_clock::now();
 
-#pragma omp parallel for
-    for (int i = 0; i < numThreads; ++i) {
-        pmars2exhaust(mars[i], warriors, mars[0]->nWarriors);
-        check_sanity(mars[i]);
-        clear_results(mars[i]);
-
-        save_pspaces(mars[i]);
-        amalgamate_pspaces(mars[i]);   /* Share P-spaces with equal PINs */
-    }
-
     // precompute all seeds
     std::vector<u32_t> seeds;
     for (u32_t i = 0; i < mars[0]->rounds; ++i) {
@@ -3069,26 +3150,32 @@ int main(int argc, char** argv) {
         seed = compute_positions(seed, mars[0]);
     }
 
-// use dynamic scheduling because sim_mw is usually quite slow, but takes different times.
-#pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int)mars[0]->rounds; ++i) {
-        int thread = omp_get_thread_num();
-        sim_clear_core(mars[thread]);
+    if (isBenchmark) {
+        const auto benchTime = std::chrono::system_clock::now();
+        float printTime = 2;
+        std::vector<double> times;
+        while (true) {
+            const auto start = std::chrono::system_clock::now();
+            eval(numThreads, mars, warriors, seeds);
+            const auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
+            times.push_back(sec);
 
-        seed = compute_positions(seeds[i], mars[thread]);
-        load_warriors(mars[thread]);
-        set_starting_order(i, mars[thread]);
+            const auto secBenchTime = std::chrono::duration<double>(std::chrono::system_clock::now() - benchTime).count();
+            if (secBenchTime > printTime) {
+                printTime += 2;
 
-        int nalive = sim_mw(mars[thread], mars[thread]->startPositions, mars[thread]->deaths);
-        if (nalive < 0)
-            panic("simulator panic!\n");
+                double mean;
+                size_t n;
+                meanWithoutOutliers(times, 3, mean, n);
 
-        accumulate_results(mars[thread]);
-    }
-
-    // accumulate all results into mars[0]
-    for (int i = 1; i < numThreads; ++i) {
-        accumulate_results(mars[i], mars[0]);
+                std::cout << mars[0]->rounds / mean << " rounds per second (using "
+                    << times.size() << " measurements, "
+                    << (100.0 * (times.size() - n)/times.size()) << "% outliers, "
+                    << (100.0 * n / times.size()) << "% ok)" << std::endl;
+            }
+        }
+    } else {
+        eval(numThreads, mars, warriors, seeds);
     }
 
     auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
