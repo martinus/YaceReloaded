@@ -808,16 +808,19 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
                 /* SPL */
                 IPINCMOD(ip);
                 queue(ip);
-                if ( w->nprocs < processes ) {
+                if (w->nprocs < processes) {
                     ++w->nprocs;
                     queue(pta);
                 }
+
                 /* in the endgame, check if a tie is inevitable */
                 if (cycles < max_alive_proc) {
                     w_t* w_iterator = w->succ;
 
                     /* break if all warriors have more processes than cycles */
-                    while ((w_iterator->nprocs * alive_cnt > cycles) && (w_iterator != w)) w_iterator = w_iterator->succ;
+                    while ((w_iterator->nprocs * alive_cnt > cycles) && (w_iterator != w)) {
+                        w_iterator = w_iterator->succ;
+                    }
                     if (w_iterator->nprocs*alive_cnt  > cycles) {
                         /*printf("stopping at %d\n", cycles);*/
                         goto out;
@@ -860,10 +863,10 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         } else if (mode == EX_APOSTINC<<mBITS) {
             /*printf("APOSTINC\n");*/
             {field_t* f = &(ptb->a);
-                ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
-                rb_a = ptb->a;      /* read in registers */
-                rb_b = ptb->b;
-                INCMOD(*f);}
+            ptb = ptb + ptb->a; if (ptb >= CoreEnd) ptb -= coresize;
+            rb_a = ptb->a;      /* read in registers */
+            rb_b = ptb->b;
+            INCMOD(*f);}
         } else if (mode == EX_BPREDEC<<mBITS) {
             /*printf("BPREDEC\n");*/
             DECMOD(ptb->b);
@@ -876,10 +879,10 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         } else if (mode == EX_BPOSTINC<<mBITS) {
             /*printf("BPOSTINC\n");*/
             {field_t* f = &(ptb->b);
-                ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
-                rb_a = ptb->a;      /* read in registers */
-                rb_b = ptb->b;
-                INCMOD(*f);}
+            ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
+            rb_a = ptb->a;      /* read in registers */
+            rb_b = ptb->b;
+            INCMOD(*f);}
         } else if (mode == EX_BINDIRECT<<mBITS) {
             /*printf("BINDIRECT\n");*/
             ptb = ptb + ptb->b; if (ptb >= CoreEnd) ptb -= coresize;
@@ -927,9 +930,11 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             ptb->a = ra_b;
             break;
 
+#if 0
         case _OP(EX_MOV, EX_mI):
             printf("unreachable code reached. You have a problem!\n");
             break;
+#endif
 
         // DJN
 
@@ -1236,7 +1241,7 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
             ptb->a = rb_a / ra_b;
             break;
 
-
+#if 0
         case _OP(EX_NOP,EX_mI):
         case _OP(EX_NOP,EX_mX):
         case _OP(EX_NOP,EX_mF):
@@ -1245,6 +1250,7 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         case _OP(EX_NOP,EX_mB):
         case _OP(EX_NOP,EX_mBA):
             break;
+#endif
 
         case _OP(EX_LDP,EX_mA):
             ptb->a = UNSAFE_PSPACE_GET(w->id, ra_a % pspaceSize);
