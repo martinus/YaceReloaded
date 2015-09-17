@@ -3066,12 +3066,14 @@ void meanWithoutOutliers(
 
         const auto variance = m2 / (n - 1);
         const auto standardDeviation = std::sqrt(variance);
+        //std::cout << "[" << x << ", " << mean << ", " << standardDeviation << "]" << std::endl;
         if (x > mean + standardDeviation * maxStandardDeviationsFromMean) {
             // can't accept the number, remove it
             mean -= delta / n;
             --n;
             return;
         }
+
     }
 }
 
@@ -3152,26 +3154,29 @@ int main(int argc, char** argv) {
 
     if (isBenchmark) {
         const auto benchTime = std::chrono::system_clock::now();
-        float printTime = 2;
+        float printTime = 10;
         std::vector<double> times;
         while (true) {
             const auto start = std::chrono::system_clock::now();
             eval(numThreads, mars, warriors, seeds);
-            const auto sec = std::chrono::duration<double>(std::chrono::system_clock::now() - start).count();
-            times.push_back(sec);
+            const auto stop = std::chrono::system_clock::now();
+            times.push_back(std::chrono::duration<double>(stop - start).count());
 
             const auto secBenchTime = std::chrono::duration<double>(std::chrono::system_clock::now() - benchTime).count();
             if (secBenchTime > printTime) {
-                printTime += 2;
+                printTime += 10;
 
                 double mean;
                 size_t n;
-                meanWithoutOutliers(times, 3, mean, n);
+                meanWithoutOutliers(times, 2, mean, n);
 
-                std::cout << mars[0]->rounds / mean << " rounds per second (using "
+                std::cout << mars[0]->rounds / mean << " rounds per second ("
                     << times.size() << " measurements, "
                     << (100.0 * (times.size() - n)/times.size()) << "% outliers, "
                     << (100.0 * n / times.size()) << "% ok)" << std::endl;
+
+                // warmup after cout
+                eval(numThreads, mars, warriors, seeds);
             }
         }
     } else {
