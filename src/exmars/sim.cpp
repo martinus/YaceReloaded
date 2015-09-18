@@ -107,8 +107,10 @@ void sim_free_bufs(void* m)
             pspace_free(mars->pspacesOrigin[i]);
         }
     }
-    for (i=0; i<mars->nWarriors; ++i) {
-        free(mars->warriors[i].code);
+    if (mars->warriors) {
+        for (i = 0; i < mars->nWarriors; ++i) {
+            free(mars->warriors[i].code);
+        }
     }
     free(mars->coreMem);
     free(mars->deaths);
@@ -123,12 +125,10 @@ void sim_free_bufs(void* m)
     free(mars);
 }
 
-
 /* allocate everything needed by simulator */
 int sim_alloc_bufs(mars_t* mars) {
     if ((mars->warriors = (warrior_t*)malloc(sizeof(warrior_t)*mars->nWarriors))) {
-        u32_t n;
-        for (n=0; n<mars->nWarriors; ++n) {
+        for (u32_t n=0; n<mars->nWarriors; ++n) {
             if (!(mars->warriors[n].code = (insn_t*)malloc(sizeof(insn_t)*mars->maxWarriorLength))) {
                 return 0;
             }

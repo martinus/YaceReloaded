@@ -35,5 +35,6 @@
       <Filter>exmars</Filter>
     </ClInclude>
     <ClInclude Include="..\inc\FitnessEvaluator.h" />
+    <ClInclude Include="..\inc\FastRng.h" />
   </ItemGroup>
 </Project>

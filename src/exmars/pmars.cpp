@@ -2591,8 +2591,7 @@ void amalgamate_pspaces(mars_t* mars)
 
 void load_warriors(mars_t* mars)
 {
-    unsigned int i;
-    for (i=0; i<mars->nWarriors; i++) {
+    for (u32_t i=0; i<mars->nWarriors; i++) {
         sim_load_warrior(mars, mars->positions[i], mars->warriors[i].code, mars->warriors[i].len);
     }
 }
@@ -2663,7 +2662,8 @@ void output_results(mars_t* mars)
  * Warrior positioning algorithms
  *
  * These are pMARS compatible.  Warrior 0 is always positioned at 0.
- * posit() and npos() are transcribed from pmars/pos.c.  */
+ * posit() and 
+ ) are transcribed from pmars/pos.c.  */
 
 #define RETRIES1 20                /* how many times to try generating one
                                     * position */
@@ -3079,6 +3079,9 @@ void meanWithoutOutliers(
 
 
 
+#include <FitnessEvaluator.h>
+
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         usage();
@@ -3092,6 +3095,32 @@ int main(int argc, char** argv) {
         isBenchmark = true;
         --argc;
         ++argv;
+    } else if (cmd == "evolve") {
+        // TODO use protobuf configuration instead of argc and argv
+        mars_t* mars = init(argc-1, argv+1);
+        std::vector<std::string> warriorFiles;
+        auto* w = mars->warriorNames;
+        while (w) {
+            warriorFiles.push_back(w->warriorName);
+            w = w->next;
+        }
+
+        FitnessEvaluator fe(
+            mars->rounds,
+            mars->cycles,
+            mars->coresize,
+            mars->minsep,
+            mars->maxWarriorLength,
+            mars->processes,
+            warriorFiles,
+            123);
+
+        // create an imp
+        WarriorAry imp;
+        imp.push_back({ op::MOV, modifier::mI, addr_mode::DIRECT, 0, addr_mode::DIRECT, 1 });
+
+        auto f = fe.calcFitness(imp);
+        std::cout << "fitness: " << f << std::endl;
     }
 
     const int numThreads = std::thread::hardware_concurrency();
