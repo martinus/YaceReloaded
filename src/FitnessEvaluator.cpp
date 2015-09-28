@@ -4,6 +4,7 @@
 #include <exmars/exhaust.h>
 #include <exmars/pspace.h>
 #include <exmars/sim.h>
+#include <exmars/insn_help.h>
 
 #include <algorithm>
 #include <vector>
@@ -51,8 +52,10 @@ mars_t* createMars(unsigned roundsPerWarrior,
     
     mars->isMultiWarriorOutput = 0;
 
-    // alloc everything except warriors
-    mars->warriors = 0;
+    // alloc space for two warriors
+    mars->warriors = (warrior_t*)malloc(sizeof(warrior_t)*mars->nWarriors);
+
+    // alloc everything else
     mars->positions = (field_t*)malloc(sizeof(field_t)*mars->nWarriors);
     mars->startPositions = (field_t*)malloc(sizeof(field_t)*mars->nWarriors);
     mars->deaths = (u32_t*)malloc(sizeof(unsigned int)*mars->nWarriors);
@@ -98,8 +101,43 @@ struct SingleTestCase {
 
 int assemble_warrior(mars_t* mars, const char* fName, warrior_struct* w);
 void pmars2exhaust_warrior(u32_t coresize, warrior_struct* wSrc, warrior_t* wTgt);
+void clear_results(mars_t* mars);
+void save_pspaces(mars_t* mars);
+void amalgamate_pspaces(mars_t* mars);
+void load_warriors(mars_t* mars);
+void set_starting_order(unsigned int round, mars_t* mars);
+void accumulate_results(mars_t* mars);
+
+int mods(int a, int b) {
+    int m = a % b;
+    if (m < 0) {
+        m += b;
+    }
+    return m;
+}
+
+void convertWarrior(const WarriorAry& warrior, warrior_t& w, int coresize) {
+    w.start = static_cast<u32_t>(warrior.startOffset);
+    w.len = static_cast<u32_t>(warrior.ins.size());
+    w.have_pin = 0;
+    insn_t* in = w.code;
+    for (size_t i = 0; i < warrior.ins.size(); ++i) {
+        auto& line = warrior.ins[i];
+        in->in = OP(line[0], line[1], line[2], line[4]);
+        in->a = mods(line[3], coresize);
+        in->b = mods(line[5], coresize);
+        ++in;
+    }
+}
+
+enum FightResult {
+    TIE,
+    WIN,
+    LOSE
+};
 
 struct FitnessEvaluator::Data {
+    warrior_t mEvaluationWarrior;
     std::vector<warrior_t> mWarriors;
     std::vector<mars_t*> mMars;
 
@@ -136,8 +174,8 @@ struct FitnessEvaluator::Data {
             pmars2exhaust_warrior(coresize, &w, &mWarriors[i]);
         }
 
-        // TODO 
-        
+        createWarrior(&mEvaluationWarrior, maxWarriorLength);
+
         // create randomized positions
         // warrior 0 is always at 0.
         FastRng rng;
@@ -170,7 +208,68 @@ struct FitnessEvaluator::Data {
         }
 
         // TODO shuffle / reorder mTestCases from time to time to be faster
+    }
 
+
+    size_t calcFitness(const WarriorAry& warrior, size_t stopWhenAbove) {
+        // convert warrior into warrior_t struct, then let it fight
+        convertWarrior(warrior, mEvaluationWarrior, mMars[0]->coresize);
+
+        // now we've converted everything. Let's fight!
+        // TODO make this parallel
+        for (size_t i = 0; i < mMars.size(); ++i) {
+            //check_sanity();
+            save_pspaces(mMars[i]);
+            // no pin so far (whatever this is)
+            //amalgamate_pspaces(mMars[i]);
+        }
+
+        // TODO make this parallel
+        int wins = 0;
+        int ties = 0;
+
+        size_t fitness = 0;
+        for (size_t i = 0; i < mTestCases.size(); ++i) {
+            int thread = 0;
+            //int thread = omp_get_thread_num();
+            auto& mars = mMars[thread];
+            auto& tc = mTestCases[i];
+
+            // prepare core
+            mars->positions[0] = 0;
+            mars->warriors[0] = mEvaluationWarrior;
+
+            mars->positions[1] = tc.startPos;
+            mars->warriors[1] = *tc.warrior;
+
+            clear_results(mars);
+            sim_clear_core(mars);
+            load_warriors(mars);
+            set_starting_order(tc.round, mars);
+
+            // simulate! This is the time consuming call.
+            u32_t cycles_left;
+            int nalive = sim_mw(mars, mars->startPositions, mars->deaths, cycles_left);
+            accumulate_results(mars);
+
+            FightResult fr = LOSE;
+            if (mars->results[1] == 1) {
+                fr = WIN;
+            } else if (mars->results[2] == 1) {
+                fr = TIE;
+            }
+
+            if (WIN == fr) {
+                ++wins;
+            } else if (TIE == fr) {
+                ++ties;
+            }
+        }
+
+        std::cout << wins << " " << ties << std::endl
+            << (mTestCases.size() - (wins + ties)) << " " << ties << std::endl;
+
+        return 0;
 
     }
 
@@ -202,10 +301,9 @@ FitnessEvaluator::FitnessEvaluator(
 }
 
 FitnessEvaluator::~FitnessEvaluator() {
-
 }
 
+
 size_t FitnessEvaluator::calcFitness(const WarriorAry& warrior, size_t stopWhenAbove) {
-    // convert warrior into warrior_t struct, then let it fight
-    return 0;
+    return mData->calcFitness(warrior, stopWhenAbove);
 }

@@ -36,6 +36,7 @@
  *     2: print each instruction as it is executed
  */
 
+
 /*
  * File scoped stuff
  */
@@ -49,7 +50,7 @@
 /*static unsigned int modes[8] = {0, 0, 0, 0, 0, 0, 0, 0};*/
 
 /* protos */
-static int sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t *death_tab);
+static int sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t *death_tab, u32_t& cycles_left);
 
 /*---------------------------------------------------------------
  * Simulator memory management
@@ -408,12 +409,11 @@ sim_reset_pspaces(mars_t* mars)
  *     All file scoped globals */
 
 int
-sim_mw(mars_t* mars, const field_t *const war_pos_tab, u32_t* death_tab)
+sim_mw(mars_t* mars, const field_t *const war_pos_tab, u32_t* death_tab, u32_t& cycles_left)
 {
     int alive_count;
     /* if ( !Core_Mem || !Queue_Mem || !War_Tab || !PSpaces ) return -1; */
-
-    alive_count = sim_proper(mars, war_pos_tab, death_tab);
+    alive_count = sim_proper(mars, war_pos_tab, death_tab, cycles_left);
 
     /* Update p-space locations 0. */
     if (alive_count >= 0) {
@@ -493,14 +493,17 @@ sim_mw(mars_t* mars, const field_t *const war_pos_tab, u32_t* death_tab)
 #define queue(x)                                                        \
     do {                                                                \
         insn_t** w_tail = w->tail;                                      \
-        *(w_tail) = (x); if (++(w_tail) == queue_end) w_tail = queue_start; \
+        *(w_tail) = (x);                                                \
+        if (++(w_tail) == queue_end) {                                  \
+            w_tail = queue_start;                                       \
+        }                                                               \
         w->tail = w_tail;                                               \
     } while(0)
 
 #define INCMOD(x) do { if ( ++(x) == coresize ) (x) = 0; } while (0)
 #define IPINCMOD(x) do { if ( ++(x) == CoreEnd ) (x) = core; } while (0)
-#define DECMOD(x) do { if ((x) == 0) (x)=coresize1; else --(x); } while (0)
-#define IPDECMOD(x) do { if ((x)==0) (x)=CoreEnd1; else --(x); } while (0)
+#define DECMOD(x) do { if (--(x) == -1) (x)=coresize1; } while (0)
+#define IPDECMOD(x) do { if (--(x) == -1) (x)=CoreEnd1; } while (0)
 #define ADDMOD(z,x,y) do { (z) = (x)+(y); if ((z)>=coresize) (z) -= coresize; } while (0)
 /*#define SUBMOD(z,x,y) do { (z) = (x)-(y); if ((int)(z)<0) (z) += coresize; } while (0)*/
 /* z is unsigned! overflow occurs. */
@@ -528,7 +531,7 @@ sim_mw(mars_t* mars, const field_t *const war_pos_tab, u32_t* death_tab)
 // 12491 rounds per second(using 1000 measurements, 979 outliers, 21 ok)
 //   minor DAT & SPL optimization
 int
-sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
+sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab, u32_t& cycles_left)
 {
     //extern Stats global_stats;
     /*
@@ -600,6 +603,8 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
     insn_t **pofs = queue_end-1;
     u32_t pspaceSize = mars->pspaceSize;
     pspace_t** pspacesOrigin = mars->pspacesOrigin;
+
+    cycles_left = mars->cycles;
 
 
 #if DEBUG >= 1
@@ -841,8 +846,10 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
                 *death_tab++ = w->id;
                 cycles = cycles - cycles/alive_cnt; /* nC+k -> (n-1)C+k */
                 max_alive_proc = alive_cnt * processes;
-                if ( --alive_cnt <= 1 ) 
+                if (--alive_cnt <= 1) {
+                    cycles_left = cycles;
                     goto out;
+                }
             }
             w = w->succ;
             continue;
@@ -898,9 +905,9 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
 
 #if DEBUG == 2
         /* Debug output */
-        printf("%6d %4ld  %s  |%4ld, d %4ld,%4ld a %4ld,%4ld b %4ld,%4ld\n",
-               cycles, ip-core, debug_line,
-               w->nprocs, pta-core, ptb-core, 
+        printf("%6d %s  |%4ld, a %4ld,%4ld b %4ld,%4ld\n",
+               cycles, debug_line,
+               w->nprocs, 
                ra_a, ra_b, rb_a, rb_b );
 #endif
 
@@ -1297,6 +1304,7 @@ sim_proper(mars_t* mars, const field_t * const war_pos_tab, u32_t* death_tab )
         w = w->succ;
     } while(--cycles);
 
+    cycles_left = 0;
 out:
 #if DEBUG == 1
     printf("cycles: %d\n", cycles);

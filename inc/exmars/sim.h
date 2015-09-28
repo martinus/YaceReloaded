@@ -33,6 +33,6 @@ int sim_load_warrior(mars_t* mars, unsigned int pos, const insn_t* const code, u
    unsigned int cycles, void **ptr_result );
 */
 
-int sim_mw(mars_t* mars, const field_t * const war_pos_tab, u32_t *death_tab );
+int sim_mw(mars_t* mars, const field_t * const war_pos_tab, u32_t *death_tab, u32_t& cycles_left);
 
 #endif /* SIM_H */

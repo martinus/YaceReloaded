@@ -2990,7 +2990,6 @@ void pmars2exhaust(mars_t* mars, warrior_struct** warriors, int wCount)
 {
     int currWarrior;
     for (currWarrior = 0; currWarrior < wCount; ++currWarrior) {
-        int i;
         warrior_struct* w = warriors[currWarrior];
 
         /* exhaust */
@@ -3025,7 +3024,8 @@ void eval(const int numThreads, std::vector<mars_t*>& mars, warrior_struct** war
         load_warriors(mars[thread]);
         set_starting_order(i, mars[thread]);
 
-        int nalive = sim_mw(mars[thread], mars[thread]->startPositions, mars[thread]->deaths);
+        u32_t cycles_left;
+        int nalive = sim_mw(mars[thread], mars[thread]->startPositions, mars[thread]->deaths, cycles_left);
         if (nalive < 0)
             panic("simulator panic!\n");
 
@@ -3120,10 +3120,12 @@ int main(int argc, char** argv) {
 
         // create an imp
         WarriorAry imp;
-        imp.push_back({ op::MOV, modifier::mI, addr_mode::DIRECT, 0, addr_mode::DIRECT, 1 });
+        imp.ins.push_back({ EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 });
+        imp.startOffset = 0;
 
-        auto f = fe.calcFitness(imp);
+        auto f = fe.calcFitness(imp, 0);
         std::cout << "fitness: " << f << std::endl;
+        return 0;
     }
 
     const int numThreads = std::thread::hardware_concurrency();
@@ -3295,7 +3297,8 @@ int oldmain(int argc, char** argv) {
         load_warriors(mars);
         set_starting_order(i, mars);
 
-        nalive = sim_mw(mars, mars->startPositions, mars->deaths);
+        u32_t cycles_left;
+        nalive = sim_mw(mars, mars->startPositions, mars->deaths, cycles_left);
         if (nalive<0)
             panic("simulator panic!\n");    
 

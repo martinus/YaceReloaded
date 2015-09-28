@@ -6,7 +6,10 @@
 
 // list of instruction. Initialize with e.g.
 // { { op::MOV, modifier::mI, addr_mode::DIRECT, 0, addr_mode::DIRECT, 1 } }
-typedef std::vector<std::vector<int>> WarriorAry;
+struct WarriorAry {
+    std::vector<std::vector<int>> ins;
+    size_t startOffset;
+};
 
 
 // Evaluates a warrior against a testset.
