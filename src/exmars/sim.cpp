@@ -125,6 +125,7 @@ void sim_free_bufs(void* m)
     free(mars);
 }
 
+
 /* allocate everything needed by simulator */
 int sim_alloc_bufs(mars_t* mars) {
     if ((mars->warriors = (warrior_t*)malloc(sizeof(warrior_t)*mars->nWarriors))) {

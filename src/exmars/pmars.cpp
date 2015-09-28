@@ -207,7 +207,7 @@ int globalswitch_warrior(mars_t* mars, warrior_struct* w, char* str, uShrt idx, 
 void encode_warrior(mars_t* mars, warrior_struct* w, uShrt sspnt);
 s32_t rng(s32_t seed);
 void panic(char *msg);
-int assemble_warrior(mars_t* mars, char* fName, warrior_struct* w);
+int assemble_warrior(mars_t* mars, const char* fName, warrior_struct* w);
 void clear_results(mars_t* mars);
 void save_pspaces(mars_t* mars);
 void amalgamate_pspaces(mars_t* mars);
@@ -2317,7 +2317,7 @@ void encode_warrior(mars_t* mars, warrior_struct* w, uShrt sspnt)
 
 
 
-int assemble_warrior(mars_t* mars, char* fName, warrior_struct* w)
+int assemble_warrior(mars_t* mars, const char* fName, warrior_struct* w)
 {
     FILE   *infp = 0;
     uChar   cont = TRUE, conLine = FALSE, i;
@@ -2943,56 +2943,59 @@ mars_t* init(int argc, char** argv) {
     return mars;
 }
 
+void pmars2exhaust_warrior(u32_t coresize, warrior_struct* wSrc, warrior_t* wTgt) {
+
+    wTgt->start = wSrc->offset;
+    wTgt->len = wSrc->instLen;
+    wTgt->have_pin = 0; /* TODO! */
+    insn_t* in = wTgt->code;
+
+    for (int i = 0; i < wSrc->instLen; ++i) {
+        /* pmars */
+        mem_struct* cell = wSrc->instBank + i;
+        FIELD_T opcode = ((FIELD_T)(cell->opcode & 0xf8)) >> 3;
+        FIELD_T modifier = (cell->opcode & 0x07);
+
+        /* exhaust */
+        int op, m, ma, mb;
+        int flags = 0;
+
+        op = p2eOp[opcode];
+        m = p2eModifier[modifier];
+
+        ma = PM_INDIR_A(cell->A_mode) ? p2eAddr[INDIR_A_TO_SYM(cell->A_mode)] : p2eAddr[cell->A_mode];
+        in->a = MODS(cell->A_value, (int)coresize);
+        mb = PM_INDIR_A(cell->B_mode) ? p2eAddr[INDIR_A_TO_SYM(cell->B_mode)] : p2eAddr[cell->B_mode];
+        in->b = MODS(cell->B_value, (int)coresize);
+
+        in->in = (flags << flPOS) | OP(op, m, ma, mb);
+        ++in;
+
+        /* build new instruction */
+        /*
+        sprintf(instrStr, "Instruction.new(\"%s\", \"%s\", \"%c\", %d, \"%c\", %d)",
+        replaceOpname,
+        modname[modifier],
+        PM_INDIR_A(cell->A_mode) ? addr_sym[INDIR_A_TO_SYM(cell->A_mode)] : addr_sym[cell->A_mode],
+        cell->A_value,
+        PM_INDIR_A(cell->B_mode) ? addr_sym[INDIR_A_TO_SYM(cell->B_mode)] : addr_sym[cell->B_mode],
+        cell->B_value);
+        rb_ary_push(rInstructions, rb_eval_string(instrStr));
+        */
+    }
+}
+
 /* convert pmars parsed warriors to exhaust's format */
 void pmars2exhaust(mars_t* mars, warrior_struct** warriors, int wCount)
 {
     int currWarrior;
-    for(currWarrior=0; currWarrior<wCount; ++currWarrior) {
+    for (currWarrior = 0; currWarrior < wCount; ++currWarrior) {
         int i;
         warrior_struct* w = warriors[currWarrior];
-            
+
         /* exhaust */
         warrior_t* warrior = &(mars->warriors[currWarrior]);
-        insn_t* in = NULL;
-        warrior->start = w->offset;
-        warrior->len = w->instLen;
-        warrior->have_pin = 0; /* TODO! */
-        in = warrior->code;
-        
-        for (i=0; i < w->instLen; ++i) {
-            /* pmars */
-            mem_struct* cell = w->instBank + i;
-            FIELD_T opcode = ((FIELD_T) (cell->opcode & 0xf8)) >> 3;
-            FIELD_T modifier = (cell->opcode & 0x07);
-
-            /* exhaust */
-            int op, m, ma, mb;
-            int flags = 0;
-            
-            op = p2eOp[opcode];
-            m = p2eModifier[modifier];
-            
-            ma = PM_INDIR_A(cell->A_mode) ? p2eAddr[INDIR_A_TO_SYM(cell->A_mode)] : p2eAddr[cell->A_mode];
-            in->a = MODS(cell->A_value, (int)mars->coresize);
-            mb = PM_INDIR_A(cell->B_mode) ? p2eAddr[INDIR_A_TO_SYM(cell->B_mode)] : p2eAddr[cell->B_mode];
-            in->b = MODS(cell->B_value, (int)mars->coresize);            
-
-            in->in = (flags << flPOS) | OP( op, m, ma, mb );
-            ++in;
-            
-            /* build new instruction */
-            /*
-              sprintf(instrStr, "Instruction.new(\"%s\", \"%s\", \"%c\", %d, \"%c\", %d)",
-              replaceOpname,
-              modname[modifier],
-              PM_INDIR_A(cell->A_mode) ? addr_sym[INDIR_A_TO_SYM(cell->A_mode)] : addr_sym[cell->A_mode],
-              cell->A_value,
-              PM_INDIR_A(cell->B_mode) ? addr_sym[INDIR_A_TO_SYM(cell->B_mode)] : addr_sym[cell->B_mode],
-              cell->B_value);
-              rb_ary_push(rInstructions, rb_eval_string(instrStr));
-            */
-        }   
-    
+        pmars2exhaust_warrior(mars->coresize, w, warrior);
     }
 }
 

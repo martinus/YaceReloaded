@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <sstream>
 #include <thread>
 #include <omp.h>
 
@@ -80,6 +81,13 @@ mars_t* createMars(unsigned roundsPerWarrior,
     return mars;
 }
 
+void createWarrior(warrior_t* w, unsigned maxWarriorLength) {
+    w->code = (insn_t*)malloc(sizeof(insn_t)*maxWarriorLength);
+    if (!w->code) {
+        throw std::runtime_error("could not allocate warrior code");
+    }
+}
+
 // single "test case"
 struct SingleTestCase {
     warrior_t* warrior;
@@ -87,6 +95,9 @@ struct SingleTestCase {
     unsigned round;
 };
 
+
+int assemble_warrior(mars_t* mars, const char* fName, warrior_struct* w);
+void pmars2exhaust_warrior(u32_t coresize, warrior_struct* wSrc, warrior_t* wTgt);
 
 struct FitnessEvaluator::Data {
     std::vector<warrior_t> mWarriors;
@@ -112,6 +123,19 @@ struct FitnessEvaluator::Data {
         }
 
         // load all the warriors
+        mWarriors.resize(warriorFiles.size());
+        for (size_t i = 0; i < warriorFiles.size(); ++i) {
+            warrior_struct w;
+            memset(&w, 0, sizeof(warrior_struct));
+            if (assemble_warrior(mMars[0], warriorFiles[i].c_str(), &w)) {
+                std::stringstream ss;
+                ss << "could not load file '" << warriorFiles[i] << "'";
+                throw std::runtime_error(ss.str());
+            }
+            createWarrior(&mWarriors[i], maxWarriorLength);
+            pmars2exhaust_warrior(coresize, &w, &mWarriors[i]);
+        }
+
         // TODO 
         
         // create randomized positions
@@ -182,5 +206,6 @@ FitnessEvaluator::~FitnessEvaluator() {
 }
 
 size_t FitnessEvaluator::calcFitness(const WarriorAry& warrior, size_t stopWhenAbove) {
+    // convert warrior into warrior_t struct, then let it fight
     return 0;
 }
