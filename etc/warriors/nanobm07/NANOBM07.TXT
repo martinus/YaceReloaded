@@ -1,0 +1,242 @@
+Name                    Author                    W   L   T   Score
+-------------------------------------------------------------------
+Red Moon                Fluffy                   51  41   8  160.96
+Foggy Maus (beta)       The MicroGP Corewars Co  48  43   9  153.68
+Black Sun III           Fluffy                   43  36  20  150.45
+8c09fc1a-4799259f-17472 bvowk                    47  43  10  149.89
+Shutting Down Evolver N Roy van Rijn             45  42  13  149.04
+c82f15b5-85011fd8-5a969 bvowk                    46  44  10  148.82
+Man&Machine             Roy van Rijn             45  41  14  148.27
+Bacillus anthracis      Fluffy                   45  43  12  148.10
+Escherichia coli        Fluffy                   46  45   9  147.45
+legend of the ice drago John Metcalf             36  24  40  147.44
+Muddy Mouse (RBv1.6r1.1 The MicroGP Corewars Co  44  41  15  147.32
+Science Abuse           Roy van Rijn             44  41  15  146.89
+rdrc: Alcoholism Malt   Dave Hillis              45  44  11  145.68
+Salmonella enterica     Fluffy                   45  45  10  145.68
+Plasmodium vivax        Fluffy                   45  44  11  145.54
+rdrc: Borneo Birdie     Dave Hillis              45  45  10  145.28
+Vera City I             Fluffy                   45  45  10  144.93
+rdrc: Sanctimonious Bur Dave Hillis              45  45   9  144.73
+Sub                     Zul Nadzri               45  45  11  144.52
+rdrc: Aborning Chute    Dave Hillis              44  44  11  144.49
+Yacing to the top?      Roy van Rijn             43  42  14  144.46
+rdrc: Sportsmen Momenta Dave Hillis              44  45  11  144.45
+rdrc: Blanch Autoclave  Dave Hillis              45  45  10  144.23
+Obsidian peasoup        Miz                      45  46   9  144.15
+rdrc: Effluvia Verbosit Dave Hillis              45  45  10  144.03
+Cosmic Horror           Miz                      38  31  31  144.00
+Car                     Roy van Rijn             43  43  14  143.76
+Leishmania deanei       Fluffy                   45  45  10  143.72
+rdrc: Delicate Crowbait Dave Hillis              44  45  11  143.69
+rumpelstiltskin         gnik                     32  20  48  143.11
+looking glass           John Metcalf             44  46  10  142.92
+Go on!                  Roy van Rijn             42  42  16  142.76
+rdrc: Repent Linemen    Dave Hillis              44  46  10  142.61
+wreath of thistles      John Metcalf             46  50   3  142.08
+scythe                  John Metcalf             32  23  45  141.75
+rdrc: Laundry OSHA      Dave Hillis              44  46  10  141.70
+rdrc: Slug Stampede     Dave Hillis              43  45  11  141.69
+h1_36.red               Dave Hillis              44  46  11  141.46
+e141527-2996-ned-nano-e bvowk                    43  46  11  140.93
+b1f3ad11-a6073e-f711ff6 bvowk                    43  45  13  140.49
+rdrc: Promote Credulity Dave Hillis              38  35  28  140.46
+Nano Clear              Christian Schmidt        43  47  10  140.08
+Yersinia pestis         Fluffy                   43  47  10  139.96
+Taking Over Nano VI     Jens Gutzeit             43  47  10  139.96
+early morning view      Neogryzor/FatalC         45  49   6  139.77
+written in a dream      John Metcalf             34  28  38  139.49
+Different Day           Ken Hubbard              43  47  10  139.49
+New Vera City           Fluffy                   41  42  17  139.39
+Clostridium Botulinum   Fluffy                   43  47   9  139.37
+rdrc: Silhouette Ulcer  Dave Hillis              43  46  12  139.32
+servant of the implord  John Metcalf             45  51   3  139.20
+Taking Over Nano IX     Jens Gutzeit             43  47  10  139.03
+rdrc: Strychnine Banshe Dave Hillis              38  38  23  138.42
+rdrc: Cosy Eruption     Dave Hillis              43  47  10  138.38
+YACE: Optimistic Limbo  Roy van Rijn             42  47  11  138.35
+Man vs Machine          Roy van Rijn             43  48   9  138.23
+e12261-1211-xt430-8-nan bvowk                    43  49   8  138.18
+h1_3.red                Dave Hillis              42  46  11  137.93
+e16744-4041-xt642-0-nan bvowk                    34  29  37  137.80
+rdrc: Revere Gimmickry  Dave Hillis              42  47  11  137.35
+e9988-449-xt642-8-nano- bvowk                    43  48   9  137.18
+Clear-2                 Roy van Rijn             42  46  12  136.94
+realm of the fire flowe John Metcalf             31  25  45  136.82
+Staphylococcus aureus   Fluffy                   38  39  23  136.66
+war of the snowflakes   John Metcalf             30  24  46  136.46
+rdrc: Hexadecimal Bunny Dave Hillis              42  47  11  136.42
+e6843-5724-xt430-4-nano bvowk                    32  28  40  136.37
+Lost in Transmission    Roy van Rijn             42  48   9  136.25
+From the Ritz to the Ru Roy van Rijn             33  30  37  136.07
+Taking Over Nano V      Jens Gutzeit             42  48  10  136.03
+rdrc: Breakaway Carte   Dave Hillis              33  29  38  135.62
+Sabertooth              Ken Hubbard              40  45  14  135.61
+rdrc: Snapback Sprite   Dave Hillis              43  50   8  135.55
+rdrc: Mesozoic Bronco   Dave Hillis              36  36  29  135.21
+Xinyl                   inversed                 33  31  36  134.99
+girl from the underworl John Metcalf             41  48  11  134.89
+strike against the mach John Metcalf             41  47  12  134.82
+e5171-4179-xt430-23-nan bvowk                    42  48  10  134.77
+Bear                    Ken Hubbard              42  49   8  134.70
+wisdom of the grasshopp Simon Wainwright         40  45  15  134.63
+e4910-8311-xt430-9-nano bvowk                    42  49   9  134.58
+tinderbox               John Metcalf             29  24  47  134.58
+e16737-7870-xt430-7-nan bvowk                    33  31  36  134.54
+the wolves are running  John Metcalf             42  50   7  134.45
+Target Practice         Brian Haskin             42  49   9  134.38
+Just another try...     Roy van Rijn             42  49   9  134.31
+rdrc: Surpass Stricture Dave Hillis              32  30  38  134.25
+on-speed                brx                      40  46  15  134.21
+Stegodon Aurorae        S.Fernandes              39  43  18  134.18
+Stegodon Trigonocephalu S.Fernandes              38  43  19  134.14
+the last of the dragons John Metcalf             42  50   8  134.03
+human resistance        gnik                     39  44  18  134.03
+e54912-5503-xt642-0-nan bvowk                    33  32  35  134.01
+Subterranean Homesick A Roy van Rijn             32  30  38  134.01
+rdrc: Butterball Acetat Dave Hillis              42  49   9  133.93
+e67685-3027-xt642-8-nan bvowk                    33  31  36  133.83
+Vibrio cholerae         Fluffy                   41  48  10  133.73
+Trypanosoma brucei      Fluffy                   32  30  38  133.61
+victim of the night     John Metcalf             38  43  18  133.04
+Bombus Terrestris       S.Fernandes              39  47  14  132.24
+Bombus Pratorum         S.Fernandes              41  49  11  132.06
+qEvo[[3]]               inversed                 36  40  24  132.04
+SuperSentryIV           J.J. 'Imrahil' Wingert   41  49  10  131.89
+Bombus Hypnorum         S.Fernandes              41  50  10  131.68
+flesh eating owls       John Metcalf             39  47  13  131.61
+Ucekupatox              G.Labarga                40  49  10  131.41
+Rubble (old)            Roy van Rijn             31  31  38  131.35
+Eagle: Wings of Fire    Zul Nadzri               40  49  10  131.34
+toy soldier             John Metcalf             39  46  15  131.34
+listen to the rain      John Metcalf             37  43  20  131.24
+miracles DO happen      Kathi                    41  52   7  131.13
+Legionella pneumophila  Fluffy                   31  30  39  131.00
+Military Grade Nano     Ken Hubbard              39  48  13  130.79
+Bombus Polaris          S.Fernandes              38  46  16  130.79
+Sniper VI               G.Labarga                39  48  12  130.66
+written in the dust     John Metcalf             40  50  10  130.52
+e68407-3942-xt430-2-nan bvowk                    31  33  36  129.93
+the kraken awakes       Metcalf/Fernandes        31  32  37  129.75
+e14354-4273-xt430-23-na bvowk                    31  32  37  129.65
+spawn of the dark core  John Metcalf             31  32  37  129.49
+e3923-7280-xt430-0-nano bvowk                    40  51   9  129.31
+Kore Klear 2            Neo                      38  47  15  129.28
+e129854-8414-xt642-0-na bvowk                    31  33  36  128.69
+e67586-3782-xt642-5-nan bvowk                    31  33  36  128.66
+e67049-9753-xt642-0-nan bvowk                    31  33  36  128.46
+forsaken                John Metcalf             36  44  20  128.17
+Stupid mistake          Roy van Rijn             40  51   9  127.96
+More mutated beast      Neo                      31  33  36  127.85
+trial by fire           John Metcalf             41  55   4  127.65
+ImpClear3               Roy van Rijn             31  35  34  127.55
+lord of the digital swa Metcalf/Fluffy           30  32  39  127.51
+Rocket propelled monkey G.Labarga                38  49  13  127.45
+A b y s s               Zul Nadzri               36  45  18  127.44
+Imp Legacy              Zul Nadzri               35  43  22  127.38
+Iceblade                Metcalf/Wainwright       38  50  12  126.90
+e21969-9819-xt430-6-nan bvowk                    30  33  37  126.89
+My nano Qscan III       G.Labarga                42  57   2  126.73
+e928-6893-xt430-20-nano bvowk                    30  34  36  126.70
+imp-test2               Neo                      25  24  50  126.23
+the monster over the hi John Metcalf             39  52   9  126.21
+Machines Rule No More I Neogryzor/FatalC         40  55   5  126.03
+Master of the Core      John Metcalf             40  54   6  125.45
+naosv2                  Nenad Tomasev            36  47  17  125.03
+song of the skylark     simon wainwright         40  55   5  124.87
+creature from the flame raptor                   39  54   6  124.61
+e940-914-xt430-1-nano-e bvowk                    38  52  10  124.45
+jaws of the swamp thing John Metcalf             29  34  37  124.18
+Type-1                  John Metcalf             39  55   6  123.97
+Wild Roses              John Metcalf             37  50  13  123.89
+rdrc: Chiefdom Monogamy Dave Hillis              40  56   4  123.80
+silver ribbon           John Metcalf             28  32  41  123.59
+quaintly ineffective    John Metcalf             38  53   8  123.54
+Humans counter-attack!  Neo                      38  52  11  123.45
+Second Nature           John Metcalf             37  51  12  122.82
+the ghost in the attic  John Metcalf             28  32  40  122.82
+Tempest                 John Metcalf             37  52  11  122.70
+from the analogue core  John Metcalf             37  51  12  122.51
+Bombus Huntii           S.Fernandes              27  31  42  122.39
+nano nano mork calling  Simon Wainwright         35  47  18  122.13
+Humans rule over machin G.Labarga                37  53  10  121.90
+Attackimp               Zul Nadzri               36  50  14  121.48
+h1_38.red               Dave Hillis              39  57   4  121.32
+Double Loop             Roy van Rijn             38  55   7  121.24
+My nano Qscan II        G.Labarga                40  58   2  121.00
+Bombus Mesomelas        Neogryzor/FatalC         35  48  17  120.75
+Safe                    Roy van Rijn             36  51  13  120.38
+Giant Killer            Zul Nadzri               34  48  18  120.31
+1560-1549-cs-sdk-platyp Pascal Hofstee           36  53  11  119.99
+Kore Klear              Neo                      35  49  16  119.97
+Oixazzo                 G.Labarga                35  51  14  119.31
+Harl Projections 0.4    Roy van Rijn             27  35  38  119.00
+SuperSentryV            J.J. 'Imrahil' Wingert   38  58   4  119.00
+Moonshade               John Metcalf             33  47  21  118.83
+Nano-idiot              Neo                      36  53  12  118.56
+Zip-warrior             Neo                      34  50  15  118.11
+snowy skies             John Metcalf             25  33  41  117.85
+e18393-6615-xt430-4-nan bvowk                    28  37  35  117.73
+invicta                 John Lewis               31  45  23  117.62
+Nano-sniper             Neo                      36  54  10  117.21
+00 Clear                Christian Schmidt        36  55  10  116.52
+Bombus Sylvestris       S.Fernandes              37  58   5  116.41
+second chance           John Metcalf             33  51  16  115.37
+Nexus-6                 John Metcalf             34  53  13  115.31
+Acarus Calvanicus       S.Fernandes              37  60   3  114.85
+Nano-sniper II          Neo                      35  55  10  114.76
+unique geometry         John Metcalf             37  60   3  114.46
+Malevolo                G.Labarga                35  57   8  114.13
+Monkey playing in a cra G.Labarga                36  60   5  112.01
+Bombus Tetrachromus     S.Fernandes              19  27  54  111.63
+Bombus Ruderarius       S.Fernandes              36  61   3  111.17
+The Core is never enoug G.Labarga                34  57   8  111.08
+Carbon tetrachloride    Neo                      30  51  19  110.01
+Ring Thing              Simon Duff               20  29  51  109.65
+Bombus Mocsaryi         S.Fernandes              19  29  52  109.49
+Booing1674              Neo                      33  57  10  109.01
+E-clear                 Christian Schmidt        31  54  14  108.68
+qopt-3193069885         bvowk                    31  55  14  107.27
+IMPs                    Christian Schmidt        17  27  56  106.56
+Nano Silk               Christian Schmidt        20  33  47  106.28
+umbrella                John Metcalf             22  39  39  105.61
+muddy puddle            John Metcalf             34  63   3  105.39
+qopt-819271332.rc       bvowk                    32  59   9  104.51
+qopt-746664288.rc       bvowk                    31  59  10  104.10
+hehehe                  Anders Rosendal          26  48  26  103.46
+Red Carpet              Robert Macrae            31  61   8   99.83
+R-clear                 Ken Espiritu             28  57  16   98.28
+Petit Mal               Ransom Smith             29  60  11   97.76
+Nano paper III          Maurice Fernandez        19  45  37   92.69
+Little scare            Beppe Bezzi              23  55  22   91.59
+Spambot                 CapnStrong               19  47  33   91.52
+nanowkium fizmoxid      bvowk/fizmo              28  65   7   91.52
+Origin of Nano Storms   Roy van Rijn             29  67   4   91.44
+Philosopher's Stone     John Metcalf             28  66   6   90.46
+Chihuahua Chalupa       David Moore              18  47  35   88.15
+IMT#2_w2                Herve Lepaisant          17  46  37   87.48
+MyGunIsQuick            P.Kline                  21  55  25   87.28
+sde                     LG                        3  20  77   85.73
+Dwarfie                 Neo                      23  62  15   85.17
+Afterburner             Neo                      25  65   9   85.06
+closed                  Philip Thorne            26  68   6   83.96
+EvoPap                  Christian Schmidt        20  58  21   82.01
+Nano Zooom...           John Metcalf             24  73   3   75.06
+Nanoni                  Neo                      16  58  26   74.61
+Obvious                 Leonardo H. Liporati     18  62  20   73.01
+Lame The 2nd            Jakub                    17  61  23   72.24
+'ere!                   Miz                      20  69  10   71.59
+TimeToWaste             RvR                      19  68  13   70.90
+Nanooom                 neo                      19  76   5   63.08
+pumpkin 4x              simon wainwright         19  75   7   63.01
+Those Lovely Banananana mjp                      18  74   8   62.06
+Mini-Me                 WFB                      14  69  17   58.69
+A Little Something      Planar                    5  52  43   58.27
+Dumb_Luck               Kevin Brunelle           17  81   3   52.35
+Wind                    Philip Thorne            14  75  11   51.83
+Evolved                 C. Stubbs                13  74  13   50.92
+ScannerEater            Roy van Rijn              6  66  27   46.30
+blind                   Philip Thorne            10  78  11   42.38
+Lame The 1st            Jakub                     0  58  41   42.34
+hypergate               Christian                 5  78  17   33.03
+hmmmm                   Will Varfar               4  83  13   25.97
