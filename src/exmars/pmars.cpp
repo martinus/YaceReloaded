@@ -3123,8 +3123,12 @@ int main(int argc, char** argv) {
         imp.ins.push_back({ EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 });
         imp.startOffset = 0;
 
+        const auto start = std::chrono::system_clock::now();
         auto f = fe.calcFitness(imp);
+        const auto stop = std::chrono::system_clock::now();
+        auto t = std::chrono::duration<double>(stop - start).count();
         std::cout << "fitness: " << f << std::endl;
+        std::cout << t << " sec." << std::endl;
         return 0;
     }
 

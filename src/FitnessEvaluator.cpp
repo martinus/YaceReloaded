@@ -243,7 +243,7 @@ struct FitnessEvaluator::Data {
 
         // now we've converted everything. Let's fight!
         // TODO make this parallel
-        for (size_t i = 0; i < mMars.size(); ++i) {
+        for (int i = 0; i < mMars.size(); ++i) {
             //check_sanity();
             save_pspaces(mMars[i]);
             // no pin so far (whatever this is)
@@ -252,39 +252,40 @@ struct FitnessEvaluator::Data {
 
         // TODO make this parallel
         size_t fitness = 0;
-        for (size_t i = 0; i < mTestCases.size(); ++i) {
-            int thread = 0;
-            //int thread = omp_get_thread_num();
-            auto& mars = mMars[thread];
-            auto& tc = mTestCases[i];
+#pragma omp parallel for schedule(dynamic)
+        for (int i = 0; i < mTestCases.size(); ++i) {
+            if (fitness <= stopWhenAbove) {
+                const int thread = omp_get_thread_num();
+                auto& mars = mMars[thread];
+                auto& tc = mTestCases[i];
 
-            // prepare core
-            mars->positions[0] = 0;
-            mars->warriors[0] = mEvaluationWarrior;
+                // prepare core
+                mars->positions[0] = 0;
+                mars->warriors[0] = mEvaluationWarrior;
 
-            mars->positions[1] = tc.startPos;
-            mars->warriors[1] = *tc.warrior;
+                mars->positions[1] = tc.startPos;
+                mars->warriors[1] = *tc.warrior;
 
-            clear_results(mars);
-            sim_clear_core(mars);
-            load_warriors(mars);
-            set_starting_order(tc.round, mars);
+                clear_results(mars);
+                sim_clear_core(mars);
+                load_warriors(mars);
+                set_starting_order(tc.round, mars);
 
-            // simulate! This is the time consuming call.
-            u32_t cycles_left;
-            int nalive = sim_mw(mars, mars->startPositions, mars->deaths, cycles_left);
-            accumulate_results(mars);
+                // simulate! This is the time consuming call.
+                u32_t cycles_left;
+                int nalive = sim_mw(mars, mars->startPositions, mars->deaths, cycles_left);
+                accumulate_results(mars);
 
-            FightResult fr = LOSE;
-            if (mars->results[1] == 1) {
-                fr = WIN;
-            } else if (mars->results[2] == 1) {
-                fr = TIE;
-            }
+                FightResult fr = LOSE;
+                if (mars->results[1] == 1) {
+                    fr = WIN;
+                } else if (mars->results[2] == 1) {
+                    fr = TIE;
+                }
 
-            fitness += calcFitness(fr, mars->cycles - cycles_left, mars->cycles);
-            if (fitness > stopWhenAbove) {
-                return fitness;
+                auto f = calcFitness(fr, mars->cycles - cycles_left, mars->cycles);
+#pragma omp atomic
+                fitness += f;
             }
         }
 
