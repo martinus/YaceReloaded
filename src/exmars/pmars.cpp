@@ -3123,7 +3123,7 @@ int main(int argc, char** argv) {
         imp.ins.push_back({ EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 });
         imp.startOffset = 0;
 
-        auto f = fe.calcFitness(imp, 0);
+        auto f = fe.calcFitness(imp);
         std::cout << "fitness: " << f << std::endl;
         return 0;
     }

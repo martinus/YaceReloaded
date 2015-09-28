@@ -211,6 +211,32 @@ struct FitnessEvaluator::Data {
     }
 
 
+    // Fitness Function for a single round.
+    // This is critical for fitness evaluation. It used to be this:
+    //  0: loss
+    //  1 : tie
+    //  3 : win
+    //
+    // Unfortunately, this is not have a very smooth fitness function
+    // which makes it difficult to optimize for. This is an attempt to make it 
+    // smoother, so that an optimizer has more information to find a minimum:
+    //
+    // The less, the better. 0 is optimal.
+    // * Win: number of iterations till the win
+    // * tie : cycles * 2
+    // * loss : cycles * 6 - num of iterations till the win
+    size_t calcFitness(FightResult fr, size_t numCycles, size_t maxCycles) {
+        if (WIN == fr) {
+            return numCycles;
+        }
+        if (TIE == fr) {
+            return 3 * maxCycles;
+        }
+        // lose
+        return maxCycles * 6 - numCycles;
+    }
+
+
     size_t calcFitness(const WarriorAry& warrior, size_t stopWhenAbove) {
         // convert warrior into warrior_t struct, then let it fight
         convertWarrior(warrior, mEvaluationWarrior, mMars[0]->coresize);
@@ -225,9 +251,6 @@ struct FitnessEvaluator::Data {
         }
 
         // TODO make this parallel
-        int wins = 0;
-        int ties = 0;
-
         size_t fitness = 0;
         for (size_t i = 0; i < mTestCases.size(); ++i) {
             int thread = 0;
@@ -259,22 +282,19 @@ struct FitnessEvaluator::Data {
                 fr = TIE;
             }
 
-            if (WIN == fr) {
-                ++wins;
-            } else if (TIE == fr) {
-                ++ties;
+            fitness += calcFitness(fr, mars->cycles - cycles_left, mars->cycles);
+            if (fitness > stopWhenAbove) {
+                return fitness;
             }
         }
 
-        std::cout << wins << " " << ties << std::endl
-            << (mTestCases.size() - (wins + ties)) << " " << ties << std::endl;
-
-        return 0;
-
+        return fitness;
     }
 
     ~Data() {
         for (unsigned i = 0; i < mMars.size(); ++i) {
+            // can't free the mars' warriors
+            mMars[i]->warriors = 0;
             sim_free_bufs(mMars[i]);
         }
     }
