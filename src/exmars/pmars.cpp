@@ -3083,7 +3083,7 @@ void meanWithoutOutliers(
 
 
 #include <FitnessEvaluator.h>
-
+#include <evolve.h>
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -3099,37 +3099,7 @@ int main(int argc, char** argv) {
         --argc;
         ++argv;
     } else if (cmd == "evolve") {
-        // TODO use protobuf configuration instead of argc and argv
-        mars_t* mars = init(argc-1, argv+1);
-        std::vector<std::string> warriorFiles;
-        auto* w = mars->warriorNames;
-        while (w) {
-            warriorFiles.push_back(w->warriorName);
-            w = w->next;
-        }
-
-        FitnessEvaluator fe(
-            mars->rounds,
-            mars->cycles,
-            mars->coresize,
-            mars->minsep,
-            mars->maxWarriorLength,
-            mars->processes,
-            warriorFiles,
-            123);
-
-        // create an imp
-        WarriorAry imp;
-        imp.ins.push_back({ EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 });
-        imp.startOffset = 0;
-
-        const auto start = std::chrono::system_clock::now();
-        auto f = fe.calcFitness(imp);
-        const auto stop = std::chrono::system_clock::now();
-        auto t = std::chrono::duration<double>(stop - start).count();
-        std::cout << "fitness: " << f << std::endl;
-        std::cout << t << " sec." << std::endl;
-        return 0;
+        return evolve(argc - 1, argv + 1);
     }
 
     const int numThreads = std::thread::hardware_concurrency();

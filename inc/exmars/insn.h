@@ -51,11 +51,13 @@ enum ex_op {
     EX_MODM,
     EX_DIV,
     EX_LDP,
-    EX_STP              /* 18 */
+    EX_STP,              /* 18 */
+    EX_OP_END
 };
 
 enum ex_modifier {
-    EX_mF, EX_mA, EX_mB, EX_mAB, EX_mBA, EX_mX, EX_mI   /* 7 */
+    EX_mF, EX_mA, EX_mB, EX_mAB, EX_mBA, EX_mX, EX_mI,   /* 7 */
+    EX_MODIFIER_END
 };
 
 enum ex_addr_mode {
@@ -67,7 +69,8 @@ enum ex_addr_mode {
     EX_BPREDEC, /* < */
     EX_BPOSTINC,    /* > */
     EX_APREDEC, /* { */
-    EX_APOSTINC /* } */   /* 8 */
+    EX_APOSTINC, /* } */   /* 8 */
+    EX_ADDRMODE_END
 };
 
 #define EX_INDIRECT EX_BINDIRECT

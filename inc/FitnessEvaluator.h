@@ -5,10 +5,11 @@
 #include <exmars/exhaust.h>
 
 // list of instruction. Initialize with e.g.
-// { { op::MOV, modifier::mI, addr_mode::DIRECT, 0, addr_mode::DIRECT, 1 } }
+// { { EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 } }
 struct WarriorAry {
     std::vector<std::vector<int>> ins;
     size_t startOffset;
+    double fitness;
 };
 
 
@@ -29,7 +30,7 @@ public:
     ~FitnessEvaluator();
 
     // calculates fitness for this warrior. This should be as fast as possible.
-    size_t calcFitness(const WarriorAry& warrior, size_t stopWhenAbove = -1);
+    double calcFitness(const WarriorAry& warrior, double stopWhenAbove = std::numeric_limits<double>::max());
 
 private:
     struct Data;

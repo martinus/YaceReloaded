@@ -12,6 +12,10 @@
       <Filter>exmars</Filter>
     </ClCompile>
     <ClCompile Include="..\src\FitnessEvaluator.cpp" />
+    <ClCompile Include="..\src\evolve.cpp" />
+    <ClCompile Include="..\src\exmars\asm.cpp">
+      <Filter>exmars</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="exmars">

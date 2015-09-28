@@ -225,24 +225,23 @@ struct FitnessEvaluator::Data {
     // * Win: number of iterations till the win
     // * tie : cycles * 2
     // * loss : cycles * 6 - num of iterations till the win
-    size_t calcFitness(FightResult fr, size_t numCycles, size_t maxCycles) {
+    double calcFitness(FightResult fr, size_t numCycles, size_t maxCycles) {
         if (WIN == fr) {
-            return numCycles;
+            return static_cast<double>(numCycles);
         }
         if (TIE == fr) {
-            return 3 * maxCycles;
+            return 3.0 * maxCycles;
         }
         // lose
-        return maxCycles * 6 - numCycles;
+        return maxCycles * 6.0 - numCycles;
     }
 
 
-    size_t calcFitness(const WarriorAry& warrior, size_t stopWhenAbove) {
+    double calcFitness(const WarriorAry& warrior, double stopWhenAbove) {
         // convert warrior into warrior_t struct, then let it fight
         convertWarrior(warrior, mEvaluationWarrior, mMars[0]->coresize);
 
         // now we've converted everything. Let's fight!
-        // TODO make this parallel
         for (int i = 0; i < mMars.size(); ++i) {
             //check_sanity();
             save_pspaces(mMars[i]);
@@ -250,8 +249,7 @@ struct FitnessEvaluator::Data {
             //amalgamate_pspaces(mMars[i]);
         }
 
-        // TODO make this parallel
-        size_t fitness = 0;
+        double fitness = 0;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < mTestCases.size(); ++i) {
             if (fitness <= stopWhenAbove) {
@@ -284,6 +282,9 @@ struct FitnessEvaluator::Data {
                 }
 
                 auto f = calcFitness(fr, mars->cycles - cycles_left, mars->cycles);
+                // normalize by the number of rounds and by cycles
+                f /= mTestCases.size() * mars->cycles;
+
 #pragma omp atomic
                 fitness += f;
             }
@@ -325,6 +326,6 @@ FitnessEvaluator::~FitnessEvaluator() {
 }
 
 
-size_t FitnessEvaluator::calcFitness(const WarriorAry& warrior, size_t stopWhenAbove) {
+double FitnessEvaluator::calcFitness(const WarriorAry& warrior, double stopWhenAbove) {
     return mData->calcFitness(warrior, stopWhenAbove);
 }

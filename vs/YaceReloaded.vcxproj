@@ -152,6 +152,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\evolve.cpp" />
+    <ClCompile Include="..\src\exmars\asm.cpp" />
     <ClCompile Include="..\src\exmars\pmars.cpp" />
     <ClCompile Include="..\src\exmars\pspace.cpp" />
     <ClCompile Include="..\src\exmars\sim.cpp" />
