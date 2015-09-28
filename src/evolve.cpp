@@ -12,7 +12,8 @@
 void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
     switch (idx) {
     case 0:
-        ins[0] = rng(EX_OP_END);
+        // no LDP and no STP
+        ins[0] = rng(EX_LDP);
         break;
 
     case 1:
@@ -56,21 +57,30 @@ void evolve(FastRng& rng,
 {
     bool hasChanged = false;
     while (!hasChanged) {
-        switch (rng(5)) {
+        switch (rng(10)) {
         case 0:
             // insert random instruction
             if (wSrc.ins.size() < maxWarriorLength) {
                 wTgt = wSrc;
-                wTgt.ins.push_back(rngIns(rng, coresize));
+                int pos = rng(static_cast<unsigned>(wTgt.ins.size() + 1));
+                wTgt.ins.insert(wTgt.ins.begin() + pos, rngIns(rng, coresize));
+                if (pos <= wTgt.startOffset) {
+                    ++wTgt.startOffset;
+                }
                 hasChanged = true;
             }
             break;
 
         case 1:
+        case 7:
             // remove random instruction
             if (wSrc.ins.size() > 1) {
                 wTgt = wSrc;
-                wTgt.ins.erase(wTgt.ins.begin() + rng(static_cast<unsigned>(wTgt.ins.size())));
+                int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
+                wTgt.ins.erase(wTgt.ins.begin() + pos);
+                if (pos < wTgt.startOffset) {
+                    --wTgt.startOffset;
+                }
                 hasChanged = true;
             }
             break;
@@ -91,26 +101,75 @@ void evolve(FastRng& rng,
             break;
 
         case 3:
-        {
             // change single pos
-            wTgt = wSrc;
-            unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-            rngIns(rng, wTgt.ins[pos], coresize, rng(6));
-            hasChanged = true;
-        }
+            if (!wSrc.ins.empty()) {
+                wTgt = wSrc;
+               unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                rngIns(rng, wTgt.ins[pos], coresize, rng(6));
+                hasChanged = true;
+            }
             break;
 
         case 4:
             // change whole instruction
-        {
-            wTgt = wSrc;
-            unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-            wTgt.ins[pos] = rngIns(rng, coresize);
-            hasChanged = true;
-        }
+            if (!wSrc.ins.empty()) {
+                wTgt = wSrc;
+                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                wTgt.ins[pos] = rngIns(rng, coresize);
+                hasChanged = true;
+            }
             break;
 
+        case 5:
+            // change start
+            if (wSrc.ins.size() > 1) {
+                size_t pos;
+                do {
+                    pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                } while (pos == wSrc.startOffset);
+                wTgt = wSrc;
+                wTgt.startOffset = pos;
+                hasChanged = true;
+            }
+            break;
+
+        case 6:
+            // duplicate an instruction
+            if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
+                wTgt = wSrc;
+                int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
+                auto tmp = wTgt.ins[pos];
+                wTgt.ins.insert(wTgt.ins.begin() + pos, tmp);
+                if (pos < wTgt.startOffset) {
+                    ++wTgt.startOffset;
+                }
+                hasChanged = true;
+            }
+            break;
+
+        case 8:
+            // swap numbers within instruction
+            if (!wSrc.ins.empty()) {
+                wTgt = wSrc;
+                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                std::swap(wTgt.ins[pos][3], wTgt.ins[pos][5]);
+                hasChanged = true;
+            }
+            break;
+
+        case 9:
+            // swap address mode within instruction
+            if (!wSrc.ins.empty()) {
+                wTgt = wSrc;
+                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                std::swap(wTgt.ins[pos][2], wTgt.ins[pos][4]);
+                hasChanged = true;
+            }
+            break;
+
+
         default:
+            std::cout << "error!" << std::endl;
             throw std::runtime_error("evolve switch");
         }
     }
@@ -147,11 +206,11 @@ int evolve(int argc, char** argv) {
     wCurrent.fitness = fe.calcFitness(wCurrent);
 
     FastRng rng;
-    rng.seed(3211);
+    //rng.seed(3211);
 
     WarriorAry wTrial;
 
-    double beta = 1e7;
+    double beta = 50;
     WarriorAry wBest;
     wBest.fitness = std::numeric_limits<double>::max();
 
