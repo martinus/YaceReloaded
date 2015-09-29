@@ -32,7 +32,15 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
         break;
 
     case 3:
-        ins[3] = rng(coresize);
+        if (rng(2)) {
+            ins[3] = rng(coresize);
+        } else {
+            int change = rng(17) - 8;
+            ins[3] = change;
+            if (change < 0) {
+                ins[3] += coresize;
+            }
+        }
         break;
 
     case 4:
@@ -40,7 +48,15 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
         break;
 
     case 5:
-        ins[5] = rng(coresize);
+        if (rng(2)) {
+            ins[5] = rng(coresize);
+        } else {
+            int change = rng(17) - 8;
+            ins[5] = change;
+            if (change < 0) {
+                ins[5] += coresize;
+            }
+        }
         break;
 
     default:
@@ -224,7 +240,35 @@ void evolve(FastRng& rng,
             break;
 
         case 13:
-            // copy to random position
+            // swap random within index
+            if (wSrc.ins.size() > 2) {
+                unsigned pos1 = rng(static_cast<unsigned>(wSrc.ins.size()));
+                unsigned pos2;
+                do {
+                    pos2 = rng(static_cast<unsigned>(wSrc.ins.size()));
+                } while (pos1 == pos2);
+
+                wTgt = wSrc;
+
+                //    0       1       2       3     4       5
+                //  EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 } }
+
+                // random swap a and b value/mode
+                int idx1 = rng(4);
+                int idx2 = idx1;
+                if (idx1 >= 2 && rng(2)) {
+                    idx2 += 2;
+                }
+                std::swap(wTgt.ins[pos1][idx1], wTgt.ins[pos2][idx2]);
+                isOriginal = false;
+            }
+            break;
+
+            /*
+        case 13:
+            // copy single value to random other instruction.
+            // unfortunately copying the full instruction seems to destroy diversity.
+            // Just copy one entry instead.
             if (wSrc.ins.size() > 1) {
                 wTgt = wSrc;
                 int pos1 = rng(static_cast<unsigned>(wTgt.ins.size()));
@@ -232,11 +276,12 @@ void evolve(FastRng& rng,
                 do {
                     pos2 = rng(static_cast<unsigned>(wTgt.ins.size()));
                 } while (pos1 == pos2);
-                wTgt.ins[pos1] = wTgt.ins[pos2];
+                auto idx = rng(6);
+                wTgt.ins[pos1][idx] = wTgt.ins[pos2][idx];
                 isOriginal = false;
             }
             break;
-
+            */
 
         default:
             std::cout << "error!" << std::endl;
@@ -250,20 +295,25 @@ void evolve(FastRng& rng,
 
 std::string print(const WarriorAry& w, u32_t coresize);
 
-void printStatus(size_t iter, const WarriorAry& wBest, mars_t* mars, double acceptanceRate, double beta) {
+void printStatus(size_t iter, const WarriorAry& w, mars_t* mars, double acceptanceRate, double beta) {
     std::cout.precision(15);
     std::cout
         << std::endl
         << ";redcode-94nop" << std::endl
-        << ";name YaceReloaded " << wBest.iteration << ": " << wBest.fitness << std::endl
+        << ";name YaceReloaded " << w.iteration << ": " << w.fitness << std::endl
         << ";author Martin Ankerl" << std::endl
         << ";strategy Markov Chain Monte Carlo sampling" << std::endl
-        << ";stratgey with Metropolis-Hastings Algorithms" << std::endl
+        << ";strategy with Metropolis-Hastings Algorithm" << std::endl
+        << ";strategy " << w.score << " testset score" << std::endl
         << ";strategy " << acceptanceRate << " acceptance rate" << std::endl
         << ";strategy " << iter << " current iteration" << std::endl
         << ";strategy " << beta << " beta" << std::endl;
 
-    std::cout << print(wBest, mars->coresize);
+    std::cout << print(w, mars->coresize);
+}
+
+void printStats(const FitnessEvaluator& fe) {
+    std::cout << fe.printStats() << std::endl;
 }
 
 
@@ -287,19 +337,23 @@ int evolve(int argc, char** argv) {
         warriorFiles,
         123);
 
-    // create an imp
-    WarriorAry wCurrent;
-    //wCurrent.ins.push_back({ EX_IMP, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 });
-     
-    wCurrent.startOffset = 0;
-    wCurrent.fitness = fe.calcFitness(wCurrent);
-
     FastRng rng;
     //rng.seed(3211);
 
+    // create a random start warrior
+    WarriorAry wCurrent;
+    int initialLength = rng(mars->maxWarriorLength);
+    for (size_t i = 0; i < initialLength; ++i) {
+        wCurrent.ins.push_back(rngIns(rng, mars->coresize));
+    }
+    wCurrent.startOffset = rng(initialLength);
+    double score;
+    wCurrent.fitness = fe.calcFitness(wCurrent, std::numeric_limits<double>::max(), score);
+    wCurrent.score = score;
+
     WarriorAry wTrial;
 
-    double beta = 100;
+    double beta = 400;
     WarriorAry wBest;
     wBest.fitness = std::numeric_limits<double>::max();
 
@@ -310,12 +364,14 @@ int evolve(int argc, char** argv) {
     //SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 
     bool isAutoPrintBestActive = true;
+
+    //while (iter < 10000) {
     while (true) {
         evolve(rng, wCurrent, wTrial, mars->coresize, mars->maxWarriorLength);
 
         // see https://github.com/StanfordPL/stoke-release/blob/232ca096de53be8f1f528b22f3b610566f386cae/src/search/search.cc#L142
         const auto maxFitness = wCurrent.fitness - std::log(rng.rand01()) / beta;
-        wTrial.fitness = fe.calcFitness(wTrial, maxFitness);
+        wTrial.fitness = fe.calcFitness(wTrial, maxFitness, wTrial.score);
         ++iter;
         double gotAccepted = 0;
         if (wTrial.fitness <= maxFitness) {
@@ -359,6 +415,10 @@ int evolve(int argc, char** argv) {
                 std::cout << "automatically print new best is " << (isAutoPrintBestActive ? "ON" : "OFF") << std::endl;
                 break;
 
+            case 's':
+                printStats(fe);
+                break;
+
             default:
                 std::cout << "usage:" << std::endl
                     << " h: this help" << std::endl
@@ -367,11 +427,15 @@ int evolve(int argc, char** argv) {
                     << " r: reset current warrior to best warrior" << std::endl
                     << " B: double beta" << std::endl
                     << " b: half beta" << std::endl
+                    << " s: print stats" << std::endl
                     << std::endl;
                 break;
             }
         }
     }
+    printStatus(iter, wBest, mars, acceptanceRate, beta);
+    printStats(fe);
+
 
     //SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
 
