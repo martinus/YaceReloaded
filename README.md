@@ -16,3 +16,12 @@ References:
 * exMARS http://corewar.co.uk/ankerl/exmars.htm
 * yace http://corewar.co.uk/ankerl/yace.htm
 * An Introduction to MCMC for Machine Learning http://cis-linux1.temple.edu/~latecki/Courses/RobotFall07/PapersFall07/andrieu03introduction.pdf
+
+
+Improving MCMC
+* https://www.google.at/search?q=9781441915757-c1.pdf&rlz=1C1AVNA_deAT635AT637&oq=9781441915757-c1.pdf&aqs=chrome..69i57j69i60.399j0j4&sourceid=chrome&es_sm=93&ie=UTF-8
+* Differential Evolution seems to work very well: 
+markov chain monte carlo sampling using direct search optimization
+https://scholar.google.at/scholar?hl=en&q=markov+chain+monte+carlo+sampling+using+direct+search+optimization&btnG=&as_sdt=1%2C5&as_sdtp=
+
+* http://www.stat.columbia.edu/~gelman/stuff_for_blog/cajo.pdf

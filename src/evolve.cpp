@@ -57,7 +57,7 @@ void evolve(FastRng& rng,
 {
     bool hasChanged = false;
     while (!hasChanged) {
-        switch (rng(10)) {
+        switch (rng(11)) {
         case 0:
             // insert random instruction
             if (wSrc.ins.size() < maxWarriorLength) {
@@ -167,6 +167,26 @@ void evolve(FastRng& rng,
             }
             break;
 
+        case 10:
+            // increase/decrease a number
+            if (!wSrc.ins.empty()) {
+                wTgt = wSrc;
+                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                int idx = 3;
+                if (rng(2)) {
+                    idx = 5;
+                }
+                wTgt.ins[pos][idx] += rng(2) * 2 - 1;
+                if (wTgt.ins[pos][idx] == coresize) {
+                    wTgt.ins[pos][idx] -= coresize;
+                } else if (wTgt.ins[pos][idx] == -1) {
+                    wTgt.ins[pos][idx] += coresize;
+                }
+                std::swap(wTgt.ins[pos][2], wTgt.ins[pos][4]);
+                hasChanged = true;
+            }
+            break;
+
 
         default:
             std::cout << "error!" << std::endl;
@@ -210,11 +230,12 @@ int evolve(int argc, char** argv) {
 
     WarriorAry wTrial;
 
-    double beta = 50;
+    double beta = 100;
     WarriorAry wBest;
     wBest.fitness = std::numeric_limits<double>::max();
 
     size_t iter = 0;
+    double acceptanceRate = 0.5;
     while (true) {
         evolve(rng, wCurrent, wTrial, mars->coresize, mars->maxWarriorLength);
 
@@ -222,7 +243,9 @@ int evolve(int argc, char** argv) {
         const auto maxFitness = wCurrent.fitness - std::log(rng.rand01()) / beta;
         wTrial.fitness = fe.calcFitness(wTrial, maxFitness);
         ++iter;
+        double gotAccepted = 0;
         if (wTrial.fitness <= maxFitness) {
+            gotAccepted = 1;
             wCurrent = wTrial;
             std::cout << ".";
             //std::cout << iter << ": " << wCurrent.fitness << " accepted" << std::endl;
@@ -239,6 +262,11 @@ int evolve(int argc, char** argv) {
                     << std::endl;
                 std::cout << print(wBest, mars->coresize);
             }
+        }
+
+        acceptanceRate = acceptanceRate * 0.99 + gotAccepted * 0.01;
+        if (iter % 500 == 0) {
+            std::cout << std::endl << acceptanceRate << " acceptance rate" << std::endl;
         }
     }
     //const auto stop = std::chrono::system_clock::now();
