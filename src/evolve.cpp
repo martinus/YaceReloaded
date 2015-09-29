@@ -8,6 +8,7 @@
 
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <conio.h>
 
 #include <Windows.h>
@@ -304,12 +305,12 @@ void printStatus(size_t iter, const WarriorAry& w, mars_t* mars, double acceptan
         << ";author Martin Ankerl" << std::endl
         << ";strategy Markov Chain Monte Carlo sampling" << std::endl
         << ";strategy with Metropolis-Hastings Algorithm" << std::endl
-        << ";strategy " << w.score << " testset score" << std::endl
+        << ";strategy " << std::fixed << std::setprecision(2) << w.score << " testset score" << std::endl
         << ";strategy " << acceptanceRate << " acceptance rate" << std::endl
         << ";strategy " << iter << " current iteration" << std::endl
-        << ";strategy " << beta << " beta" << std::endl;
-
-    std::cout << print(w, mars->coresize);
+        << ";strategy " << beta << " beta" << std::endl
+        << ";assert 1" << std::endl
+        << print(w, mars->coresize);
 }
 
 void printStats(const FitnessEvaluator& fe) {
@@ -318,6 +319,7 @@ void printStats(const FitnessEvaluator& fe) {
 
 
 int evolve(int argc, char** argv) {
+
     // TODO use protobuf configuration instead of argc and argv
     mars_t* mars = init(argc, argv);
     std::vector<std::string> warriorFiles;
@@ -366,6 +368,8 @@ int evolve(int argc, char** argv) {
     bool isAutoPrintBestActive = true;
 
     //while (iter < 10000) {
+    // set priority to very low
+    SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_BEGIN);
     while (true) {
         evolve(rng, wCurrent, wTrial, mars->coresize, mars->maxWarriorLength);
 
@@ -436,6 +440,8 @@ int evolve(int argc, char** argv) {
     printStatus(iter, wBest, mars, acceptanceRate, beta);
     printStats(fe);
 
+    // set priority back.
+    SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_END);
 
     //SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
 
