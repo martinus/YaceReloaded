@@ -9,11 +9,15 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 #include <conio.h>
 
 #include <Windows.h>
 #ifdef max
 #undef max
+#endif
+#ifdef min
+#undef min
 #endif
 
 
@@ -297,7 +301,6 @@ void evolve(FastRng& rng,
 std::string print(const WarriorAry& w, u32_t coresize);
 
 void printStatus(size_t iter, const WarriorAry& w, mars_t* mars, double acceptanceRate, double beta) {
-    std::cout.precision(15);
     std::cout
         << std::endl
         << ";redcode-94nop" << std::endl
@@ -306,7 +309,7 @@ void printStatus(size_t iter, const WarriorAry& w, mars_t* mars, double acceptan
         << ";strategy Markov Chain Monte Carlo sampling" << std::endl
         << ";strategy with Metropolis-Hastings Algorithm" << std::endl
         << ";strategy " << std::fixed << std::setprecision(2) << w.score << " testset score" << std::endl
-        << ";strategy " << acceptanceRate << " acceptance rate" << std::endl
+        << ";strategy " << std::defaultfloat << std::setprecision(10) << acceptanceRate << " acceptance rate" << std::endl
         << ";strategy " << iter << " current iteration" << std::endl
         << ";strategy " << beta << " beta" << std::endl
         << ";assert 1" << std::endl
@@ -344,7 +347,7 @@ int evolve(int argc, char** argv) {
 
     // create a random start warrior
     WarriorAry wCurrent;
-    int initialLength = rng(mars->maxWarriorLength);
+    int initialLength = rng(std::min((u32_t)20, mars->maxWarriorLength));
     for (size_t i = 0; i < initialLength; ++i) {
         wCurrent.ins.push_back(rngIns(rng, mars->coresize));
     }
