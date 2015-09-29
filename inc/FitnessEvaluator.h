@@ -10,6 +10,8 @@ struct WarriorAry {
     std::vector<std::vector<int>> ins;
     size_t startOffset;
     double fitness;
+
+    size_t iteration;
 };
 
 

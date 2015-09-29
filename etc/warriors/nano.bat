@@ -1,5 +1,8 @@
+::set APP="C:\dev\YaceReloaded.git\vs\x64\Release\YaceReloaded.exe"
+set APP="C:\Users\manker\Documents\YaceReloaded\vs\x64\Release\YaceReloaded.exe"
+
 cd nanobm07
-C:\dev\YaceReloaded.git\vs\x64\Release\YaceReloaded.exe evolve -s 80 -p 80 -c 800 -l 5 -d 5 -r 1000 ^
+%APP% evolve -s 80 -p 80 -c 800 -l 5 -d 5 -r 1000 ^
 8C094799.RED ^
 BREAKAWA.RED ^
 C82F8501.RED ^

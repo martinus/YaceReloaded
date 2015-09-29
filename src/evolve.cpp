@@ -8,6 +8,13 @@
 
 #include <string>
 #include <iostream>
+#include <conio.h>
+
+#include <Windows.h>
+#ifdef max
+#undef max
+#endif
+
 
 void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
     switch (idx) {
@@ -78,7 +85,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
                 wTgt.ins.erase(wTgt.ins.begin() + pos);
-                if (pos < wTgt.startOffset) {
+                if (pos < wTgt.startOffset || wTgt.startOffset == wTgt.ins.size()) {
                     --wTgt.startOffset;
                 }
                 hasChanged = true;
@@ -104,7 +111,7 @@ void evolve(FastRng& rng,
             // change single pos
             if (!wSrc.ins.empty()) {
                 wTgt = wSrc;
-               unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 rngIns(rng, wTgt.ins[pos], coresize, rng(6));
                 hasChanged = true;
             }
@@ -168,7 +175,7 @@ void evolve(FastRng& rng,
             break;
 
         case 10:
-            // increase/decrease a number
+            // increase/decrease a number up to 8 
             if (!wSrc.ins.empty()) {
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
@@ -176,13 +183,23 @@ void evolve(FastRng& rng,
                 if (rng(2)) {
                     idx = 5;
                 }
-                wTgt.ins[pos][idx] += rng(2) * 2 - 1;
-                if (wTgt.ins[pos][idx] == coresize) {
-                    wTgt.ins[pos][idx] -= coresize;
-                } else if (wTgt.ins[pos][idx] == -1) {
-                    wTgt.ins[pos][idx] += coresize;
+
+                // -8 to +8, without 0
+                int change = rng(16) - 8;
+                if (change >= 0) {
+                    ++change;
                 }
-                std::swap(wTgt.ins[pos][2], wTgt.ins[pos][4]);
+                change += wTgt.ins[pos][idx];
+
+                // handle over and underflow
+                if (change < 0) {
+                    wTgt.ins[pos][idx] = change + coresize;
+                } else if (change >= static_cast<int>(coresize)) {
+                    wTgt.ins[pos][idx] = change - coresize;
+                } else {
+                    wTgt.ins[pos][idx] = change;
+                }
+
                 hasChanged = true;
             }
             break;
@@ -196,6 +213,22 @@ void evolve(FastRng& rng,
 }
 
 std::string print(const WarriorAry& w, u32_t coresize);
+
+void printStatus(size_t iter, const WarriorAry& wBest, mars_t* mars, double acceptanceRate, double beta) {
+    std::cout.precision(15);
+    std::cout
+        << std::endl
+        << ";redcode-94" << std::endl
+        << ";name YaceReloaded " << wBest.iteration << ": " << wBest.fitness << std::endl
+        << ";author Martin Ankerl" << std::endl
+        << ";strategy Markov Chain Monte Carlo sampling" << std::endl
+        << ";stratgey with Metropolis-Hastings Algorithms" << std::endl
+        << ";strategy " << acceptanceRate << " acceptance rate" << std::endl
+        << ";strategy " << iter << " current iteration" << std::endl
+        << ";strategy " << beta << " beta" << std::endl;
+
+    std::cout << print(wBest, mars->coresize);
+}
 
 
 int evolve(int argc, char** argv) {
@@ -236,6 +269,11 @@ int evolve(int argc, char** argv) {
 
     size_t iter = 0;
     double acceptanceRate = 0.5;
+
+    // see http://msdn.microsoft.com/en-us/library/windows/desktop/ms686277%28v=vs.85%29.aspx
+    //SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
+
+    bool isAutoPrintBestActive = false;
     while (true) {
         evolve(rng, wCurrent, wTrial, mars->coresize, mars->maxWarriorLength);
 
@@ -247,28 +285,60 @@ int evolve(int argc, char** argv) {
         if (wTrial.fitness <= maxFitness) {
             gotAccepted = 1;
             wCurrent = wTrial;
-            std::cout << ".";
-            //std::cout << iter << ": " << wCurrent.fitness << " accepted" << std::endl;
 
             if (wCurrent.fitness < wBest.fitness) {
                 wBest = wCurrent;
-                std::cout
-                    << std::endl 
-                    << "; YaceReloaded " 
-                    << iter 
-                    << ": " 
-                    << wBest.fitness 
-                    << " new global best!" 
-                    << std::endl;
-                std::cout << print(wBest, mars->coresize);
+                wBest.iteration = iter;
+                if (isAutoPrintBestActive) {
+                    printStatus(iter, wBest, mars, acceptanceRate, beta);
+                }
             }
         }
 
         acceptanceRate = acceptanceRate * 0.99 + gotAccepted * 0.01;
-        if (iter % 500 == 0) {
-            std::cout << std::endl << acceptanceRate << " acceptance rate" << std::endl;
+
+        if (_kbhit()) {
+            switch (_getch()) {
+            case 'r':
+                wCurrent = wBest;
+                std::cout << "resetted current to best" << std::endl;
+                break;
+
+            case 'p':
+                printStatus(iter, wBest, mars, acceptanceRate, beta);
+                break;
+
+            case 'B':
+                beta *= 2;
+                std::cout << "doubling beta to " << beta << std::endl;
+                break;
+
+            case 'b':
+                beta /= 2;
+                std::cout << "halfing beta to " << beta << std::endl;
+                break;
+
+            case 'a':
+                isAutoPrintBestActive = !isAutoPrintBestActive;
+                std::cout << "automatically print new best is " << (isAutoPrintBestActive ? "ON" : "OFF") << std::endl;
+                break;
+
+            default:
+                std::cout << "usage:" << std::endl
+                    << " h: this help" << std::endl
+                    << " a: toggle automatic printing of new best warrior" << std::endl
+                    << " p: print best warrior" << std::endl
+                    << " r: reset current warrior to best warrior" << std::endl
+                    << " B: double beta" << std::endl
+                    << " b: half beta" << std::endl
+                    << std::endl;
+                break;
+            }
         }
     }
+
+    //SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
+
     //const auto stop = std::chrono::system_clock::now();
     //auto t = std::chrono::duration<double>(stop - start).count();
     return 0;
