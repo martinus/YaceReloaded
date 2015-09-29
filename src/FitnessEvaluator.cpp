@@ -96,6 +96,7 @@ struct SingleTestCase {
     warrior_t* warrior;
     unsigned startPos;
     unsigned round;
+    double fitnessSum;
 };
 
 
@@ -141,6 +142,9 @@ struct FitnessEvaluator::Data {
     std::vector<warrior_t> mWarriors;
     std::vector<mars_t*> mMars;
 
+    size_t mRounds;
+    size_t mEvals;
+
     unsigned mNumThreads;
     std::vector<SingleTestCase> mTestCases;
 
@@ -154,6 +158,8 @@ struct FitnessEvaluator::Data {
         unsigned seed) 
     {
         mNumThreads = std::thread::hardware_concurrency();
+        mRounds = 0;
+        mEvals = 0;
         
         // create a mars for each thread
         for (unsigned i = 0; i < mNumThreads; ++i) {
@@ -203,11 +209,18 @@ struct FitnessEvaluator::Data {
                 stc.round = round;
                 stc.warrior = &mWarriors[warriorIdx];
                 stc.startPos = positions[round];
+                stc.fitnessSum = 0;
                 mTestCases.push_back(stc);
             }
         }
+    }
 
-        // TODO shuffle / reorder mTestCases from time to time to be faster
+    std::string printStats() const {
+        std::stringstream ss;
+        ss << mRounds << " rounds in " << mEvals << " fitness evaluations ("
+            << (mRounds * 1.0 / mEvals) << " rounds per eval, "
+            << mTestCases.size() << " total)" << std::endl;
+        return ss.str();
     }
 
 
@@ -237,7 +250,11 @@ struct FitnessEvaluator::Data {
     }
 
 
-    double calcFitness(const WarriorAry& warrior, double stopWhenAbove) {
+    double calcFitness(
+        const WarriorAry& warrior, 
+        double stopWhenAbove,
+        double& warriorScore) 
+    {
         // convert warrior into warrior_t struct, then let it fight
         convertWarrior(warrior, mEvaluationWarrior, mMars[0]->coresize);
 
@@ -249,8 +266,23 @@ struct FitnessEvaluator::Data {
             //amalgamate_pspaces(mMars[i]);
         }
 
+        if (mEvals % 100 == 0) {
+            // sort so that the worst testcases come first, so we can stop early.
+            std::sort(mTestCases.begin(), mTestCases.end(), [](const SingleTestCase& a, const SingleTestCase& b) {
+                return a.fitnessSum > b.fitnessSum;
+            });
+
+            // then clear fitnessSum, to be good adaptive.
+            for (size_t i = 0; i < mTestCases.size(); ++i) {
+                mTestCases[i].fitnessSum = 0;
+            }
+        }
+
         double fitness = 0;
-#pragma omp parallel for schedule(dynamic)
+        size_t score = 0;
+        size_t rounds = 0;
+
+#pragma omp parallel for schedule(dynamic) reduction(+:rounds,score)
         for (int i = 0; i < mTestCases.size(); ++i) {
             if (fitness <= stopWhenAbove) {
                 const int thread = omp_get_thread_num();
@@ -277,18 +309,30 @@ struct FitnessEvaluator::Data {
                 FightResult fr = LOSE;
                 if (mars->results[1] == 1) {
                     fr = WIN;
+                    score += 3;
                 } else if (mars->results[2] == 1) {
                     fr = TIE;
+                    ++score;
                 }
 
                 auto f = calcFitness(fr, mars->cycles - cycles_left, mars->cycles);
                 // normalize by the number of rounds and by cycles
                 f /= mTestCases.size() * mars->cycles;
 
+                // sum up fitness
+                tc.fitnessSum += f;
+                size_t currentScore = 0;
+                ++rounds;
+
 #pragma omp atomic
                 fitness += f;
             }
         }
+
+        mRounds += rounds;
+        ++mEvals;
+
+        warriorScore = 100.0 * score / rounds;
 
         return fitness;
     }
@@ -326,6 +370,10 @@ FitnessEvaluator::~FitnessEvaluator() {
 }
 
 
-double FitnessEvaluator::calcFitness(const WarriorAry& warrior, double stopWhenAbove) {
-    return mData->calcFitness(warrior, stopWhenAbove);
+double FitnessEvaluator::calcFitness(const WarriorAry& warrior, double stopWhenAbove, double& score) {
+    return mData->calcFitness(warrior, stopWhenAbove, score);
+}
+
+std::string FitnessEvaluator::printStats() const {
+    return mData->printStats();
 }

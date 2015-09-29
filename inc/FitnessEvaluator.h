@@ -10,6 +10,7 @@ struct WarriorAry {
     std::vector<std::vector<int>> ins;
     size_t startOffset;
     double fitness;
+    double score;
 
     size_t iteration;
 };
@@ -32,7 +33,9 @@ public:
     ~FitnessEvaluator();
 
     // calculates fitness for this warrior. This should be as fast as possible.
-    double calcFitness(const WarriorAry& warrior, double stopWhenAbove = std::numeric_limits<double>::max());
+    double calcFitness(const WarriorAry& warrior, double stopWhenAbove, double& score);
+
+    std::string printStats() const;
 
 private:
     struct Data;

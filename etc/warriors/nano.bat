@@ -48,3 +48,5 @@ nanobm07\WISDOM.RED ^
 nanobm07\WREATHOF.RED ^
 nanobm07\WRITTEN.RED ^
 nanobm07\XINYL.RED
+
+pause
