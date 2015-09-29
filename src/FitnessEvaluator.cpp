@@ -233,7 +233,7 @@ struct FitnessEvaluator::Data {
             return 3.0 * maxCycles;
         }
         // lose
-        return maxCycles * 6.0 - numCycles;
+        return 6.0 * maxCycles - numCycles;
     }
 
 

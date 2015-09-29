@@ -57,14 +57,16 @@ std::vector<int> rngIns(FastRng& rng, u32_t coresize) {
 }
 
 void evolve(FastRng& rng, 
-    const WarriorAry& wSrc, 
+    const WarriorAry& wSrcOriginal, 
     WarriorAry& wTgt, 
     u32_t coresize, 
     u32_t maxWarriorLength)
 {
-    bool hasChanged = false;
-    while (!hasChanged) {
-        switch (rng(11)) {
+    // change at least once, and probably multiple times.
+    auto wSrc = wSrcOriginal;
+    bool isOriginal = true;
+    while (isOriginal || rng.rand01() < 0.5) {
+        switch (rng(14)) {
         case 0:
             // insert random instruction
             if (wSrc.ins.size() < maxWarriorLength) {
@@ -74,12 +76,13 @@ void evolve(FastRng& rng,
                 if (pos <= wTgt.startOffset) {
                     ++wTgt.startOffset;
                 }
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
         case 1:
         case 7:
+        case 12:
             // remove random instruction
             if (wSrc.ins.size() > 1) {
                 wTgt = wSrc;
@@ -88,7 +91,7 @@ void evolve(FastRng& rng,
                 if (pos < wTgt.startOffset || wTgt.startOffset == wTgt.ins.size()) {
                     --wTgt.startOffset;
                 }
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -103,7 +106,7 @@ void evolve(FastRng& rng,
 
                 wTgt = wSrc;
                 std::swap(wTgt.ins[pos1], wTgt.ins[pos2]);
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -113,7 +116,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 rngIns(rng, wTgt.ins[pos], coresize, rng(6));
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -123,7 +126,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 wTgt.ins[pos] = rngIns(rng, coresize);
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -136,7 +139,7 @@ void evolve(FastRng& rng,
                 } while (pos == wSrc.startOffset);
                 wTgt = wSrc;
                 wTgt.startOffset = pos;
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -150,7 +153,7 @@ void evolve(FastRng& rng,
                 if (pos < wTgt.startOffset) {
                     ++wTgt.startOffset;
                 }
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -160,7 +163,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 std::swap(wTgt.ins[pos][3], wTgt.ins[pos][5]);
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -170,7 +173,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 std::swap(wTgt.ins[pos][2], wTgt.ins[pos][4]);
-                hasChanged = true;
+                isOriginal = false;
             }
             break;
 
@@ -200,7 +203,37 @@ void evolve(FastRng& rng,
                     wTgt.ins[pos][idx] = change;
                 }
 
-                hasChanged = true;
+                isOriginal = false;
+            }
+            break;
+
+        case 11:
+            // duplicate to random position
+            if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
+                wTgt = wSrc;
+                int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
+                auto tmp = wTgt.ins[pos];
+
+                int insertPos = rng(static_cast<unsigned>(wTgt.ins.size() + 1));
+                wTgt.ins.insert(wTgt.ins.begin() + insertPos, tmp);
+                if (pos <= wTgt.startOffset) {
+                    ++wTgt.startOffset;
+                }
+                isOriginal = false;
+            }
+            break;
+
+        case 13:
+            // copy to random position
+            if (wSrc.ins.size() > 1) {
+                wTgt = wSrc;
+                int pos1 = rng(static_cast<unsigned>(wTgt.ins.size()));
+                int pos2;
+                do {
+                    pos2 = rng(static_cast<unsigned>(wTgt.ins.size()));
+                } while (pos1 == pos2);
+                wTgt.ins[pos1] = wTgt.ins[pos2];
+                isOriginal = false;
             }
             break;
 
@@ -209,6 +242,9 @@ void evolve(FastRng& rng,
             std::cout << "error!" << std::endl;
             throw std::runtime_error("evolve switch");
         }
+
+        // update wSrc for next round
+        wSrc = wTgt;
     }
 }
 
@@ -218,7 +254,7 @@ void printStatus(size_t iter, const WarriorAry& wBest, mars_t* mars, double acce
     std::cout.precision(15);
     std::cout
         << std::endl
-        << ";redcode-94" << std::endl
+        << ";redcode-94nop" << std::endl
         << ";name YaceReloaded " << wBest.iteration << ": " << wBest.fitness << std::endl
         << ";author Martin Ankerl" << std::endl
         << ";strategy Markov Chain Monte Carlo sampling" << std::endl
@@ -273,7 +309,7 @@ int evolve(int argc, char** argv) {
     // see http://msdn.microsoft.com/en-us/library/windows/desktop/ms686277%28v=vs.85%29.aspx
     //SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
 
-    bool isAutoPrintBestActive = false;
+    bool isAutoPrintBestActive = true;
     while (true) {
         evolve(rng, wCurrent, wTrial, mars->coresize, mars->maxWarriorLength);
 
