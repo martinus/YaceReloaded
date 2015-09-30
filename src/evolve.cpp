@@ -424,9 +424,9 @@ int evolve(int argc, char** argv) {
             // recreate test cases from time to time, to prevent overfitting
             fe.createTestCases();
             // re-evaluate current and best
-            wCurrent.fitness = fe.calcFitness(wCurrent, maxFitness, wCurrent.score);
+            wCurrent.fitness = fe.calcFitness(wCurrent, std::numeric_limits<double>::max(), wCurrent.score);
             auto oldScore = wBest.score;
-            wBest.fitness = fe.calcFitness(wBest, maxFitness, wBest.score);
+            wBest.fitness = fe.calcFitness(wBest, std::numeric_limits<double>::max(), wBest.score);
             std::cout << "Score changed from " << oldScore << " to " << wBest.score << std::endl;
         }
 
