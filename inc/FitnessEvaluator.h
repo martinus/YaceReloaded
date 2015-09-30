@@ -36,6 +36,7 @@ public:
     double calcFitness(const WarriorAry& warrior, double stopWhenAbove, double& score);
 
     std::string printStats() const;
+    void createTestCases();
 
 private:
     struct Data;

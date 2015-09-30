@@ -138,6 +138,10 @@ enum FightResult {
 };
 
 struct FitnessEvaluator::Data {
+    FastRng mRng;
+    unsigned mMinSep;
+    unsigned mCoreSize;
+    unsigned mRoundsPerWarrior;
     warrior_t mEvaluationWarrior;
     std::vector<warrior_t> mWarriors;
     std::vector<mars_t*> mMars;
@@ -160,6 +164,9 @@ struct FitnessEvaluator::Data {
         mNumThreads = std::thread::hardware_concurrency();
         mRounds = 0;
         mEvals = 0;
+        mMinSep = minSep;
+        mCoreSize = coresize;
+        mRoundsPerWarrior = roundsPerWarrior;
         
         // create a mars for each thread
         for (unsigned i = 0; i < mNumThreads; ++i) {
@@ -184,24 +191,28 @@ struct FitnessEvaluator::Data {
 
         // create randomized positions
         // warrior 0 is always at 0.
-        FastRng rng;
         if (seed == -1) {
-            rng.seed();
+            mRng.seed();
         } else {
-            rng.seed(seed);
+            mRng.seed(seed);
         }
 
+        createTestCases();
+    }
+
+    void createTestCases() {
         std::vector<unsigned> positions;
-        for (unsigned p = minSep; p != coresize - 2 * minSep + 1; ++p) {
+        for (unsigned p = mMinSep; p != mCoreSize - 2 * mMinSep + 1; ++p) {
             positions.push_back(p);
         }
 
         // initialize all tests
-        auto numPoses = std::min(static_cast<unsigned>(positions.size()), roundsPerWarrior);
+        auto numPoses = std::min(static_cast<unsigned>(positions.size()), mRoundsPerWarrior);
 
+        mTestCases.clear();
         for (unsigned warriorIdx = 0; warriorIdx < mWarriors.size(); ++warriorIdx) {
             // reshuffle for each warrior
-            std::random_shuffle(positions.begin(), positions.end(), rng);
+            std::random_shuffle(positions.begin(), positions.end(), mRng);
 
             // only choose numPoses rounds
             for (unsigned round = 0; round < numPoses; ++round) {
@@ -376,4 +387,8 @@ double FitnessEvaluator::calcFitness(const WarriorAry& warrior, double stopWhenA
 
 std::string FitnessEvaluator::printStats() const {
     return mData->printStats();
+}
+
+void FitnessEvaluator::createTestCases() {
+    mData->createTestCases();
 }

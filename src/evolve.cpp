@@ -37,6 +37,17 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
         break;
 
     case 3:
+    {
+        float r = rng.rand01();
+        int change = static_cast<int>(r*r*r * (coresize / 2));
+        if (rng(2)) {
+            ins[3] = change;
+        } else {
+            ins[3] = -change;
+        }
+    }
+
+        /*
         if (rng(2)) {
             ins[3] = rng(coresize);
         } else {
@@ -46,6 +57,7 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
                 ins[3] += coresize;
             }
         }
+        */
         break;
 
     case 4:
@@ -53,6 +65,17 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
         break;
 
     case 5:
+    {
+        float r = rng.rand01();
+        int change = static_cast<int>(r*r*r * (coresize / 2));
+        if (rng(2)) {
+            ins[5] = change;
+        } else {
+            ins[5] = -change;
+        }
+    }
+
+        /*
         if (rng(2)) {
             ins[5] = rng(coresize);
         } else {
@@ -62,6 +85,7 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
                 ins[5] += coresize;
             }
         }
+        */
         break;
 
     default:
@@ -209,9 +233,11 @@ void evolve(FastRng& rng,
                 }
 
                 // -8 to +8, without 0
-                int change = rng(16) - 8;
-                if (change >= 0) {
-                    ++change;
+                float r = rng.rand01();
+                int change = static_cast<int>(r*r*r * (coresize/2));
+                ++change;
+                if (rng(2)) {
+                    change = -change;
                 }
                 change += wTgt.ins[pos][idx];
 
@@ -392,6 +418,16 @@ int evolve(int argc, char** argv) {
                     printStatus(iter, wBest, mars, acceptanceRate, beta);
                 }
             }
+        }
+
+        if (iter % 100 == 0) {
+            // recreate test cases from time to time, to prevent overfitting
+            fe.createTestCases();
+            // re-evaluate current and best
+            wCurrent.fitness = fe.calcFitness(wCurrent, maxFitness, wCurrent.score);
+            auto oldScore = wBest.score;
+            wBest.fitness = fe.calcFitness(wBest, maxFitness, wBest.score);
+            std::cout << "Score changed from " << oldScore << " to " << wBest.score << std::endl;
         }
 
         acceptanceRate = acceptanceRate * 0.99 + gotAccepted * 0.01;
