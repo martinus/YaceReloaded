@@ -115,7 +115,7 @@ void evolve(FastRng& rng,
     auto wSrc = wSrcOriginal;
 
     size_t codeChangesLeft = 1;
-    while (rng.rand01() < 0.8) {
+    while (rng.rand01() < 0.5) {
         ++codeChangesLeft;
     }
 
@@ -429,7 +429,7 @@ int evolve(int argc, char** argv) {
 
     //while (iter < 10000) {
     // set priority to very low
-    SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_BEGIN);
+    SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
     while (true) {
         evolve(rng, wCurrent, wTrial, mars->coresize, mars->maxWarriorLength);
 
@@ -509,11 +509,6 @@ int evolve(int argc, char** argv) {
     }
     printStatus(iter, wBest, mars->coresize, acceptanceRate, beta);
     printStats(fe);
-
-    // set priority back.
-    SetPriorityClass(GetCurrentProcess(), PROCESS_MODE_BACKGROUND_END);
-
-    //SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
 
     //const auto stop = std::chrono::system_clock::now();
     //auto t = std::chrono::duration<double>(stop - start).count();

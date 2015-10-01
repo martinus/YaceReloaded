@@ -12,6 +12,23 @@
 #include <thread>
 #include <omp.h>
 
+#include <Windows.h>
+#ifdef max
+#undef max
+#endif
+#ifdef min
+#undef min
+#endif
+
+// See http://ofekshilon.com/2014/06/10/executing-code-once-per-thread-in-an-openmp-loop/
+struct ThreadInit {
+    ThreadInit(bool isDefaultCtor = true) {
+        if (isDefaultCtor) {
+            SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+        }
+    }
+};
+
 warrior_t allocWarrior(u32_t maxLength)
 {
     warrior_t w;
@@ -260,14 +277,16 @@ struct FitnessEvaluator::Data {
     // * tie : cycles * 2
     // * loss : cycles * 6 - num of iterations till the win
     double calcFitness(FightResult fr, size_t numCycles, size_t maxCycles) {
+        size_t f = 0;
         if (WIN == fr) {
-            return static_cast<double>(numCycles);
+            f = numCycles;
+        } else if (TIE == fr) {
+            f = 5 * maxCycles;
+        } else {
+            // lose
+            f = 7 * maxCycles - numCycles;
         }
-        if (TIE == fr) {
-            return 10.0 * maxCycles;
-        }
-        // lose
-        return 12.0 * maxCycles - numCycles;
+        return static_cast<double>(f) / maxCycles;
     }
 
 
@@ -303,7 +322,8 @@ struct FitnessEvaluator::Data {
         size_t score = 0;
         size_t rounds = 0;
 
-#pragma omp parallel for schedule(dynamic) reduction(+:rounds,score)
+        ThreadInit ti(false);
+#pragma omp parallel for schedule(dynamic) reduction(+:rounds,score) private(ti)
         for (int i = 0; i < mTestCases.size(); ++i) {
             if (fitness <= stopWhenAbove) {
                 const int thread = omp_get_thread_num();
@@ -338,7 +358,7 @@ struct FitnessEvaluator::Data {
 
                 auto f = calcFitness(fr, mars->cycles - cycles_left, mars->cycles);
                 // normalize by the number of rounds and by cycles
-                f /= mTestCases.size() * mars->cycles;
+                f /= mTestCases.size();
 
                 // sum up fitness
                 tc.fitnessSum += f;
