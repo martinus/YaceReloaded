@@ -1,7 +1,7 @@
-set APP="C:\dev\YaceReloaded.git\vs\x64\Release\YaceReloaded.exe"
-::set APP="C:\Users\manker\Documents\YaceReloaded\vs\x64\Release\YaceReloaded.exe"
+::set APP="C:\dev\YaceReloaded.git\vs\x64\Release\YaceReloaded.exe"
+set APP="C:\Users\manker\Documents\YaceReloaded\vs\x64\Release\YaceReloaded.exe"
 
-%APP% evolve -r 10 ^
+%APP% evolve -r 80 ^
 94nop\behemot.red ^
 94nop\blade.red ^
 94nop\candy.red ^

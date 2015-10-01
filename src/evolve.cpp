@@ -20,6 +20,29 @@
 #undef min
 #endif
 
+u32_t rngCorepos(FastRng& rng, u32_t coresize) {
+    /*
+    float r = rng.rand01();
+    int change = static_cast<int>(r*r*r * (coresize / 2));
+    if (rng(2)) {
+    ins[3] = change;
+    } else {
+    ins[3] = -change;
+    }
+    }
+    */
+    u32_t c;
+    if (rng(2)) {
+        c = rng(32);
+        if (rng(2)) {
+            c = coresize - c;
+        }
+    } else {
+        c = rng(coresize);
+    }
+    return c;
+}
+
 
 void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
     switch (idx) {
@@ -37,27 +60,7 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
         break;
 
     case 3:
-    {
-        float r = rng.rand01();
-        int change = static_cast<int>(r*r*r * (coresize / 2));
-        if (rng(2)) {
-            ins[3] = change;
-        } else {
-            ins[3] = -change;
-        }
-    }
-
-        /*
-        if (rng(2)) {
-            ins[3] = rng(coresize);
-        } else {
-            int change = rng(17) - 8;
-            ins[3] = change;
-            if (change < 0) {
-                ins[3] += coresize;
-            }
-        }
-        */
+        ins[3] = rngCorepos(rng, coresize);
         break;
 
     case 4:
@@ -65,27 +68,7 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
         break;
 
     case 5:
-    {
-        float r = rng.rand01();
-        int change = static_cast<int>(r*r*r * (coresize / 2));
-        if (rng(2)) {
-            ins[5] = change;
-        } else {
-            ins[5] = -change;
-        }
-    }
-
-        /*
-        if (rng(2)) {
-            ins[5] = rng(coresize);
-        } else {
-            int change = rng(17) - 8;
-            ins[5] = change;
-            if (change < 0) {
-                ins[5] += coresize;
-            }
-        }
-        */
+        ins[5] = rngCorepos(rng, coresize);
         break;
 
     default:
@@ -101,6 +84,27 @@ std::vector<int> rngIns(FastRng& rng, u32_t coresize) {
     return ins;
 }
 
+std::string print(const WarriorAry& w, u32_t coresize);
+
+
+void printStatus(size_t iter, const WarriorAry& w, u32_t coresize, double acceptanceRate, double beta) {
+    std::cout
+        << std::endl
+        << ";redcode-94nop" << std::endl
+        << ";name YaceReloaded " << w.iteration << ": " << w.fitness << std::endl
+        << ";author Martin Ankerl" << std::endl
+        << ";strategy Markov Chain Monte Carlo sampling" << std::endl
+        << ";strategy with Metropolis-Hastings Algorithm" << std::endl
+        << ";strategy " << std::fixed << std::setprecision(2) << w.score << " testset score" << std::endl
+        << ";strategy " << std::defaultfloat << std::setprecision(10) << acceptanceRate << " acceptance rate" << std::endl
+        << ";strategy " << iter << " current iteration" << std::endl
+        << ";strategy " << beta << " beta" << std::endl
+        << ";url https://github.com/martinus/YaceReloaded" << std::endl
+        << ";assert 1" << std::endl
+        << print(w, coresize);
+}
+
+
 void evolve(FastRng& rng, 
     const WarriorAry& wSrcOriginal, 
     WarriorAry& wTgt, 
@@ -109,25 +113,58 @@ void evolve(FastRng& rng,
 {
     // change at least once, and probably multiple times.
     auto wSrc = wSrcOriginal;
-    bool isOriginal = true;
-    while (isOriginal || rng.rand01() < 0.5) {
+
+    size_t codeChangesLeft = 1;
+    while (rng.rand01() < 0.8) {
+        ++codeChangesLeft;
+    }
+
+    while (codeChangesLeft != 0) {
         switch (rng(14)) {
         case 0:
             // insert random instruction
             if (wSrc.ins.size() < maxWarriorLength) {
                 wTgt = wSrc;
+
                 int pos = rng(static_cast<unsigned>(wTgt.ins.size() + 1));
+
                 wTgt.ins.insert(wTgt.ins.begin() + pos, rngIns(rng, coresize));
                 if (pos <= wTgt.startOffset) {
                     ++wTgt.startOffset;
                 }
-                isOriginal = false;
+
+                if (rng(2)) {
+                    // modify referencing around this command
+                    int cs = static_cast<int>(coresize);
+                    for (int i = 0; i < pos; ++i) {
+                        auto& x = wTgt.ins[i][3];
+                        if (x < cs / 2 && x >= pos - i) {
+                            ++x;
+                        }
+                        auto& y = wTgt.ins[i][5];
+                        if (y < cs / 2 && y >= pos - i) {
+                            ++y;
+                        }
+                    }
+                    for (int i = pos+1; i < wTgt.ins.size(); ++i) {
+                        auto& x = wTgt.ins[i][3];
+                        if (x > cs / 2 && cs - x > i - pos) {
+                            --x;
+                        }
+                        auto& y = wTgt.ins[i][5];
+                        if (y > cs / 2 && cs - y > i - pos) {
+                            --y;
+                        }
+                    }
+                }
+
+                --codeChangesLeft;
             }
             break;
 
         case 1:
         case 7:
-        case 12:
+        case 13:
             // remove random instruction
             if (wSrc.ins.size() > 1) {
                 wTgt = wSrc;
@@ -136,7 +173,7 @@ void evolve(FastRng& rng,
                 if (pos < wTgt.startOffset || wTgt.startOffset == wTgt.ins.size()) {
                     --wTgt.startOffset;
                 }
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
@@ -151,7 +188,7 @@ void evolve(FastRng& rng,
 
                 wTgt = wSrc;
                 std::swap(wTgt.ins[pos1], wTgt.ins[pos2]);
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
@@ -161,7 +198,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 rngIns(rng, wTgt.ins[pos], coresize, rng(6));
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
@@ -171,7 +208,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 wTgt.ins[pos] = rngIns(rng, coresize);
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
@@ -184,12 +221,13 @@ void evolve(FastRng& rng,
                 } while (pos == wSrc.startOffset);
                 wTgt = wSrc;
                 wTgt.startOffset = pos;
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
         case 6:
             // duplicate an instruction
+            /*
             if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
                 wTgt = wSrc;
                 int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
@@ -198,8 +236,9 @@ void evolve(FastRng& rng,
                 if (pos < wTgt.startOffset) {
                     ++wTgt.startOffset;
                 }
-                isOriginal = false;
+                --codeChangesLeft;
             }
+            */
             break;
 
         case 8:
@@ -208,7 +247,7 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 std::swap(wTgt.ins[pos][3], wTgt.ins[pos][5]);
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
@@ -218,12 +257,12 @@ void evolve(FastRng& rng,
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
                 std::swap(wTgt.ins[pos][2], wTgt.ins[pos][4]);
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
         case 10:
-            // increase/decrease a number up to 8 
+            // increase/decrease a number by a bit 
             if (!wSrc.ins.empty()) {
                 wTgt = wSrc;
                 unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
@@ -232,10 +271,10 @@ void evolve(FastRng& rng,
                     idx = 5;
                 }
 
-                // -8 to +8, without 0
-                float r = rng.rand01();
-                int change = static_cast<int>(r*r*r * (coresize/2));
-                ++change;
+                int change = 1;
+                while (rng.rand01() < 0.8f && change < static_cast<int>(coresize)) {
+                    ++change;
+                }
                 if (rng(2)) {
                     change = -change;
                 }
@@ -250,12 +289,13 @@ void evolve(FastRng& rng,
                     wTgt.ins[pos][idx] = change;
                 }
 
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
         case 11:
             // duplicate to random position
+            /*
             if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
                 wTgt = wSrc;
                 int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
@@ -266,11 +306,12 @@ void evolve(FastRng& rng,
                 if (pos <= wTgt.startOffset) {
                     ++wTgt.startOffset;
                 }
-                isOriginal = false;
+                --codeChangesLeft;
             }
+            */
             break;
 
-        case 13:
+        case 12:
             // swap random within index
             if (wSrc.ins.size() > 2) {
                 unsigned pos1 = rng(static_cast<unsigned>(wSrc.ins.size()));
@@ -291,7 +332,7 @@ void evolve(FastRng& rng,
                     idx2 += 2;
                 }
                 std::swap(wTgt.ins[pos1][idx1], wTgt.ins[pos2][idx2]);
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
 
@@ -309,7 +350,7 @@ void evolve(FastRng& rng,
                 } while (pos1 == pos2);
                 auto idx = rng(6);
                 wTgt.ins[pos1][idx] = wTgt.ins[pos2][idx];
-                isOriginal = false;
+                --codeChangesLeft;
             }
             break;
             */
@@ -322,24 +363,6 @@ void evolve(FastRng& rng,
         // update wSrc for next round
         wSrc = wTgt;
     }
-}
-
-std::string print(const WarriorAry& w, u32_t coresize);
-
-void printStatus(size_t iter, const WarriorAry& w, mars_t* mars, double acceptanceRate, double beta) {
-    std::cout
-        << std::endl
-        << ";redcode-94nop" << std::endl
-        << ";name YaceReloaded " << w.iteration << ": " << w.fitness << std::endl
-        << ";author Martin Ankerl" << std::endl
-        << ";strategy Markov Chain Monte Carlo sampling" << std::endl
-        << ";strategy with Metropolis-Hastings Algorithm" << std::endl
-        << ";strategy " << std::fixed << std::setprecision(2) << w.score << " testset score" << std::endl
-        << ";strategy " << std::defaultfloat << std::setprecision(10) << acceptanceRate << " acceptance rate" << std::endl
-        << ";strategy " << iter << " current iteration" << std::endl
-        << ";strategy " << beta << " beta" << std::endl
-        << ";assert 1" << std::endl
-        << print(w, mars->coresize);
 }
 
 void printStats(const FitnessEvaluator& fe) {
@@ -373,18 +396,26 @@ int evolve(int argc, char** argv) {
 
     // create a random start warrior
     WarriorAry wCurrent;
-    int initialLength = rng(std::min((u32_t)20, mars->maxWarriorLength));
-    for (size_t i = 0; i < initialLength; ++i) {
-        wCurrent.ins.push_back(rngIns(rng, mars->coresize));
+    wCurrent.fitness = std::numeric_limits<double>::max();
+    for (size_t i = 0; i < 100; ++i) {
+        WarriorAry wTry;
+        int initialLength = rng(mars->maxWarriorLength) + 1;
+        for (size_t i = 0; i < initialLength; ++i) {
+            wTry.ins.push_back(rngIns(rng, mars->coresize));
+        }
+        wTry.startOffset = rng(initialLength);
+        double score;
+        wTry.fitness = fe.calcFitness(wTry, std::numeric_limits<double>::max(), score);
+        wTry.score = score;
+
+        if (wTry.fitness < wCurrent.fitness) {
+            wCurrent = wTry;
+        }
     }
-    wCurrent.startOffset = rng(initialLength);
-    double score;
-    wCurrent.fitness = fe.calcFitness(wCurrent, std::numeric_limits<double>::max(), score);
-    wCurrent.score = score;
 
     WarriorAry wTrial;
 
-    double beta = 400;
+    double beta = 25;
     WarriorAry wBest;
     wBest.fitness = std::numeric_limits<double>::max();
 
@@ -415,7 +446,7 @@ int evolve(int argc, char** argv) {
                 wBest = wCurrent;
                 wBest.iteration = iter;
                 if (isAutoPrintBestActive) {
-                    printStatus(iter, wBest, mars, acceptanceRate, beta);
+                    printStatus(iter, wBest, mars->coresize, acceptanceRate, beta);
                 }
             }
         }
@@ -440,7 +471,7 @@ int evolve(int argc, char** argv) {
                 break;
 
             case 'p':
-                printStatus(iter, wBest, mars, acceptanceRate, beta);
+                printStatus(iter, wBest, mars->coresize, acceptanceRate, beta);
                 break;
 
             case 'B':
@@ -476,7 +507,7 @@ int evolve(int argc, char** argv) {
             }
         }
     }
-    printStatus(iter, wBest, mars, acceptanceRate, beta);
+    printStatus(iter, wBest, mars->coresize, acceptanceRate, beta);
     printStats(fe);
 
     // set priority back.

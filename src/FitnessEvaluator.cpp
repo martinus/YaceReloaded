@@ -200,6 +200,25 @@ struct FitnessEvaluator::Data {
         createTestCases();
     }
 
+
+    void createWarriorTestCases(std::vector<unsigned>& positions,
+                                unsigned numPoses,
+                                warrior_t* warrior)
+    {
+        // reshuffle for each warrior
+        std::random_shuffle(positions.begin(), positions.end(), mRng);
+
+        // only choose numPoses rounds
+        for (unsigned round = 0; round < numPoses; ++round) {
+            SingleTestCase stc;
+            stc.round = round;
+            stc.warrior = warrior;
+            stc.startPos = positions[round];
+            stc.fitnessSum = 0;
+            mTestCases.push_back(stc);
+        }
+    }
+
     void createTestCases() {
         std::vector<unsigned> positions;
         for (unsigned p = mMinSep; p != mCoreSize - 2 * mMinSep + 1; ++p) {
@@ -211,19 +230,10 @@ struct FitnessEvaluator::Data {
 
         mTestCases.clear();
         for (unsigned warriorIdx = 0; warriorIdx < mWarriors.size(); ++warriorIdx) {
-            // reshuffle for each warrior
-            std::random_shuffle(positions.begin(), positions.end(), mRng);
-
-            // only choose numPoses rounds
-            for (unsigned round = 0; round < numPoses; ++round) {
-                SingleTestCase stc;
-                stc.round = round;
-                stc.warrior = &mWarriors[warriorIdx];
-                stc.startPos = positions[round];
-                stc.fitnessSum = 0;
-                mTestCases.push_back(stc);
-            }
+            createWarriorTestCases(positions, numPoses, &mWarriors[warriorIdx]);
         }
+        // also fight against itself, this is also done in koth.
+        createWarriorTestCases(positions, numPoses, &mEvaluationWarrior);
     }
 
     std::string printStats() const {
@@ -254,10 +264,10 @@ struct FitnessEvaluator::Data {
             return static_cast<double>(numCycles);
         }
         if (TIE == fr) {
-            return 3.0 * maxCycles;
+            return 10.0 * maxCycles;
         }
         // lose
-        return 6.0 * maxCycles - numCycles;
+        return 12.0 * maxCycles - numCycles;
     }
 
 
