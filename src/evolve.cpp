@@ -115,12 +115,12 @@ void evolve(FastRng& rng,
     auto wSrc = wSrcOriginal;
 
     size_t codeChangesLeft = 1;
-    while (rng.rand01() < 0.5) {
+    while (rng.rand01() < 0.8) {
         ++codeChangesLeft;
     }
 
     while (codeChangesLeft != 0) {
-        switch (rng(14)) {
+        switch (rng(13)) {
         case 0:
             // insert random instruction
             if (wSrc.ins.size() < maxWarriorLength) {
@@ -164,7 +164,6 @@ void evolve(FastRng& rng,
 
         case 1:
         case 7:
-        case 13:
             // remove random instruction
             if (wSrc.ins.size() > 1) {
                 wTgt = wSrc;
@@ -474,6 +473,10 @@ int evolve(int argc, char** argv) {
                 printStatus(iter, wBest, mars->coresize, acceptanceRate, beta);
                 break;
 
+            case 'c':
+                printStatus(iter, wCurrent, mars->coresize, acceptanceRate, beta);
+                break;
+
             case 'B':
                 beta *= 2;
                 std::cout << "doubling beta to " << beta << std::endl;
@@ -498,6 +501,7 @@ int evolve(int argc, char** argv) {
                     << " h: this help" << std::endl
                     << " a: toggle automatic printing of new best warrior" << std::endl
                     << " p: print best warrior" << std::endl
+                    << " c: print current warrior" << std::endl
                     << " r: reset current warrior to best warrior" << std::endl
                     << " B: double beta" << std::endl
                     << " b: half beta" << std::endl
