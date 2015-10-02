@@ -158,7 +158,6 @@ struct FitnessEvaluator::Data {
     FastRng mRng;
     unsigned mMinSep;
     unsigned mCoreSize;
-    unsigned mRoundsPerWarrior;
     warrior_t mEvaluationWarrior;
     std::vector<warrior_t> mWarriors;
     std::vector<mars_t*> mMars;
@@ -183,7 +182,6 @@ struct FitnessEvaluator::Data {
         mEvals = 0;
         mMinSep = minSep;
         mCoreSize = coresize;
-        mRoundsPerWarrior = roundsPerWarrior;
         
         // create a mars for each thread
         for (unsigned i = 0; i < mNumThreads; ++i) {
@@ -214,7 +212,7 @@ struct FitnessEvaluator::Data {
             mRng.seed(seed);
         }
 
-        createTestCases();
+        createTestCases(roundsPerWarrior);
     }
 
 
@@ -236,14 +234,14 @@ struct FitnessEvaluator::Data {
         }
     }
 
-    void createTestCases() {
+    void createTestCases(unsigned roundsPerWarrior) {
         std::vector<unsigned> positions;
         for (unsigned p = mMinSep; p != mCoreSize - 2 * mMinSep + 1; ++p) {
             positions.push_back(p);
         }
 
         // initialize all tests
-        auto numPoses = std::min(static_cast<unsigned>(positions.size()), mRoundsPerWarrior);
+        auto numPoses = std::min(static_cast<unsigned>(positions.size()), roundsPerWarrior);
 
         mTestCases.clear();
         for (unsigned warriorIdx = 0; warriorIdx < mWarriors.size(); ++warriorIdx) {
@@ -419,6 +417,6 @@ std::string FitnessEvaluator::printStats() const {
     return mData->printStats();
 }
 
-void FitnessEvaluator::createTestCases() {
-    mData->createTestCases();
+void FitnessEvaluator::createTestCases(unsigned roundsPerWarrior) {
+    mData->createTestCases(roundsPerWarrior);
 }

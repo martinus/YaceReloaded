@@ -389,8 +389,10 @@ int evolve(int argc, char** argv) {
         w = w->next;
     }
 
+    unsigned roundsPerWarrior = mars->rounds;
+
     FitnessEvaluator fe(
-        mars->rounds,
+        roundsPerWarrior,
         mars->cycles,
         mars->coresize,
         mars->minsep,
@@ -461,7 +463,7 @@ int evolve(int argc, char** argv) {
 
         if (iter % 100 == 0) {
             // recreate test cases from time to time, to prevent overfitting
-            fe.createTestCases();
+            fe.createTestCases(roundsPerWarrior);
             // re-evaluate current and best
             wCurrent.fitness = fe.calcFitness(wCurrent, std::numeric_limits<double>::max(), wCurrent.score);
             auto oldScore = wBest.score;
@@ -507,6 +509,26 @@ int evolve(int argc, char** argv) {
                 std::cout << "automatically print new best is " << (isAutoPrintBestActive ? "ON" : "OFF") << std::endl;
                 break;
 
+            case 'R':
+                std::cout << "Currently using " << roundsPerWarrior << " rounds. Enter new rounds per warrior (0 to cancel): ";
+                unsigned newRoundsPerWarrior;
+                std::cin >> newRoundsPerWarrior;
+                if (newRoundsPerWarrior) {
+                    roundsPerWarrior = newRoundsPerWarrior;
+                    fe.createTestCases(roundsPerWarrior);
+                    std::cout << "recreated testset" << std::endl;
+                }
+                std::cout << "using " << roundsPerWarrior << " rounds" << std::endl;
+                break;
+
+            case '<':
+                if (--roundsPerWarrior == 0) {
+                    roundsPerWarrior = 1;
+                }
+                fe.createTestCases(roundsPerWarrior);
+                std::cout << "using " << roundsPerWarrior << " rounds" << std::endl;
+                break;
+
             case 's':
                 printStats(fe);
                 break;
@@ -519,6 +541,7 @@ int evolve(int argc, char** argv) {
                     << " P: Pause evaluation" << std::endl
                     << " c: print current warrior" << std::endl
                     << " r: reset current warrior to best warrior" << std::endl
+                    << " R: change Rounds per warrior" << std::endl
                     << " B: double beta" << std::endl
                     << " b: half beta" << std::endl
                     << " s: print stats" << std::endl
