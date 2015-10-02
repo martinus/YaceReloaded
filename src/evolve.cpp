@@ -48,6 +48,7 @@ void rngIns(FastRng& rng, std::vector<int>& ins, u32_t coresize, size_t idx) {
     switch (idx) {
     case 0:
         // no LDP and no STP
+        //ins[0] = rng(EX_ADD);
         ins[0] = rng(EX_LDP);
         break;
 
@@ -121,7 +122,7 @@ void evolve(FastRng& rng,
     auto wSrc = wSrcOriginal;
 
     size_t codeChangesLeft = 1;
-    while (rng.rand01() < 0.8) {
+    while (rng.rand01() < 0.7) {
         ++codeChangesLeft;
     }
 
@@ -130,7 +131,7 @@ void evolve(FastRng& rng,
 
 
     while (codeChangesLeft != 0) {
-        switch (rng(12)) {
+        switch (rng(13)) {
         case 0:
             // insert random instruction
             if (wSrc.ins.size() < maxWarriorLength) {
@@ -262,7 +263,6 @@ void evolve(FastRng& rng,
 
         case 6:
             // duplicate an instruction
-            /*
             if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
                 wTgt = wSrc;
                 int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
@@ -273,7 +273,6 @@ void evolve(FastRng& rng,
                 }
                 --codeChangesLeft;
             }
-            */
             break;
 
         case 7:
@@ -329,6 +328,23 @@ void evolve(FastRng& rng,
             break;
 
         case 10:
+            if (wSrc.ins.empty()) {
+                // set to dat.f $0 $0
+                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
+                wTgt = wSrc;
+                auto& ins = wTgt.ins[pos];
+                // see http://www.corewars.org/docs/94spec.html
+                // should be 0, 0, 0, 0, 0
+                ins[0] = EX_DAT;
+                ins[1] = EX_mF;
+                ins[2] = EX_DIRECT;
+                ins[3] = 0;
+                ins[4] = EX_DIRECT;
+                ins[5] = 0;
+
+                --codeChangesLeft;
+            }
+
             // duplicate to random position
             /*
             if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
@@ -371,24 +387,29 @@ void evolve(FastRng& rng,
             }
             break;
 
-            /*
-        case 13:
+        case 12:
             // copy single value to random other instruction.
             // unfortunately copying the full instruction seems to destroy diversity.
             // Just copy one entry instead.
-            if (wSrc.ins.size() > 1) {
+            if (wSrc.ins.size() > 2) {
                 wTgt = wSrc;
                 int pos1 = rng(static_cast<unsigned>(wTgt.ins.size()));
                 int pos2;
                 do {
                     pos2 = rng(static_cast<unsigned>(wTgt.ins.size()));
                 } while (pos1 == pos2);
-                auto idx = rng(6);
-                wTgt.ins[pos1][idx] = wTgt.ins[pos2][idx];
+
+                // random swap a and b value/mode
+                int idx1 = rng(4);
+                int idx2 = idx1;
+                if (idx1 >= 2 && rng(2)) {
+                    idx2 += 2;
+                }
+
+                wTgt.ins[pos1][idx1] = wTgt.ins[pos2][idx2];
                 --codeChangesLeft;
             }
             break;
-            */
 
         default:
             std::cout << "error!" << std::endl;
