@@ -105,6 +105,12 @@ void printStatus(size_t iter, const WarriorAry& w, u32_t coresize, double accept
 }
 
 
+struct Modifier {
+    virtual bool modify(WarriorAry& w);
+};
+
+
+
 void evolve(FastRng& rng, 
     const WarriorAry& wSrcOriginal, 
     WarriorAry& wTgt, 
@@ -118,6 +124,10 @@ void evolve(FastRng& rng,
     while (rng.rand01() < 0.8) {
         ++codeChangesLeft;
     }
+
+    std::vector<Modifier> modifiers;
+
+
 
     while (codeChangesLeft != 0) {
         switch (rng(12)) {
@@ -472,6 +482,12 @@ int evolve(int argc, char** argv) {
                 printStatus(iter, wBest, mars->coresize, acceptanceRate, beta);
                 break;
 
+            case 'P':
+                std::cout << "PAUSING! press any key to continue processing." << std::endl;
+                _getch();
+                std::cout << "continuing..." << std::endl;
+                break;
+
             case 'c':
                 printStatus(iter, wCurrent, mars->coresize, acceptanceRate, beta);
                 break;
@@ -500,6 +516,7 @@ int evolve(int argc, char** argv) {
                     << " h: this help" << std::endl
                     << " a: toggle automatic printing of new best warrior" << std::endl
                     << " p: print best warrior" << std::endl
+                    << " P: Pause evaluation" << std::endl
                     << " c: print current warrior" << std::endl
                     << " r: reset current warrior to best warrior" << std::endl
                     << " B: double beta" << std::endl
