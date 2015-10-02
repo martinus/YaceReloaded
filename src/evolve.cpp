@@ -174,12 +174,39 @@ void evolve(FastRng& rng,
 
         case 1:
             // remove random instruction
-            if (wSrc.ins.size() > 1) {
+            if (wSrc.ins.size() > 3) {
                 wTgt = wSrc;
                 int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
+
                 wTgt.ins.erase(wTgt.ins.begin() + pos);
                 if (pos < wTgt.startOffset || wTgt.startOffset == wTgt.ins.size()) {
                     --wTgt.startOffset;
+                }
+
+                if (rng(2)) {
+                    // modify referencing around this command
+                    // TODO make sure this is correct!
+                    int cs = static_cast<int>(coresize);
+                    for (int i = 0; i < pos; ++i) {
+                        auto& x = wTgt.ins[i][3];
+                        if (x < cs / 2 && x >= pos - i) {
+                            --x;
+                        }
+                        auto& y = wTgt.ins[i][5];
+                        if (y < cs / 2 && y >= pos - i) {
+                            --y;
+                        }
+                    }
+                    for (int i = pos; i < wTgt.ins.size(); ++i) {
+                        auto& x = wTgt.ins[i][3];
+                        if (x > cs / 2 && cs - x > i - pos) {
+                            ++x;
+                        }
+                        auto& y = wTgt.ins[i][5];
+                        if (y > cs / 2 && cs - y > i - pos) {
+                            ++y;
+                        }
+                    }
                 }
                 --codeChangesLeft;
             }
