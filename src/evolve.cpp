@@ -120,7 +120,7 @@ void evolve(FastRng& rng,
     }
 
     while (codeChangesLeft != 0) {
-        switch (rng(13)) {
+        switch (rng(12)) {
         case 0:
             // insert random instruction
             if (wSrc.ins.size() < maxWarriorLength) {
@@ -163,7 +163,6 @@ void evolve(FastRng& rng,
             break;
 
         case 1:
-        case 7:
             // remove random instruction
             if (wSrc.ins.size() > 1) {
                 wTgt = wSrc;
@@ -240,7 +239,7 @@ void evolve(FastRng& rng,
             */
             break;
 
-        case 8:
+        case 7:
             // swap numbers within instruction
             if (!wSrc.ins.empty()) {
                 wTgt = wSrc;
@@ -250,7 +249,7 @@ void evolve(FastRng& rng,
             }
             break;
 
-        case 9:
+        case 8:
             // swap address mode within instruction
             if (!wSrc.ins.empty()) {
                 wTgt = wSrc;
@@ -260,7 +259,7 @@ void evolve(FastRng& rng,
             }
             break;
 
-        case 10:
+        case 9:
             // increase/decrease a number by a bit 
             if (!wSrc.ins.empty()) {
                 wTgt = wSrc;
@@ -292,7 +291,7 @@ void evolve(FastRng& rng,
             }
             break;
 
-        case 11:
+        case 10:
             // duplicate to random position
             /*
             if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
@@ -310,7 +309,7 @@ void evolve(FastRng& rng,
             */
             break;
 
-        case 12:
+        case 11:
             // swap random within index
             if (wSrc.ins.size() > 2) {
                 unsigned pos1 = rng(static_cast<unsigned>(wSrc.ins.size()));
