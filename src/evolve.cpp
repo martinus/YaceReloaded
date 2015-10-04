@@ -106,8 +106,63 @@ void printStatus(size_t iter, const WarriorAry& w, u32_t coresize, double accept
 }
 
 
-struct Modifier {
-    virtual bool modify(WarriorAry& w);
+class Modifier {
+public:
+    virtual bool operator()(WarriorAry& w) const;
+};
+
+class InsertRandomInstruction : public Modifier {
+private:
+    unsigned mMaxWarriorLength;
+    unsigned mCoreSize;
+    FastRng& mRng;
+
+public:
+    InsertRandomInstruction(FastRng& rng, u32_t coresize, u32_t maxWarriorLength)
+        : mMaxWarriorLength(maxWarriorLength)
+        , mCoreSize(coresize)
+        , mRng(rng) {
+    }
+
+    bool operator()(WarriorAry& w) const {
+        // insert random instruction
+        if (w.ins.size() >= mMaxWarriorLength) {
+            return false;
+        }
+
+        int pos = mRng(static_cast<unsigned>(w.ins.size() + 1));
+        w.ins.insert(w.ins.begin() + pos, rngIns(mRng, mCoreSize));
+        if (pos <= w.startOffset) {
+            ++w.startOffset;
+        }
+
+        if (mRng(2)) {
+            // modify referencing around this command
+            int cs = static_cast<int>(mCoreSize);
+            for (int i = 0; i < pos; ++i) {
+                auto& x = w.ins[i][3];
+                if (x < cs / 2 && x >= pos - i) {
+                    ++x;
+                }
+                auto& y = w.ins[i][5];
+                if (y < cs / 2 && y >= pos - i) {
+                    ++y;
+                }
+            }
+            for (int i = pos + 1; i < w.ins.size(); ++i) {
+                auto& x = w.ins[i][3];
+                if (x > cs / 2 && cs - x > i - pos) {
+                    --x;
+                }
+                auto& y = w.ins[i][5];
+                if (y > cs / 2 && cs - y > i - pos) {
+                    --y;
+                }
+            }
+        }
+
+        return true;
+    }
 };
 
 
@@ -127,48 +182,15 @@ void evolve(FastRng& rng,
     }
 
     std::vector<Modifier> modifiers;
+    InsertRandomInstruction iri(rng, coresize, maxWarriorLength);
 
 
 
     while (codeChangesLeft != 0) {
         switch (rng(13)) {
         case 0:
-            // insert random instruction
-            if (wSrc.ins.size() < maxWarriorLength) {
-                wTgt = wSrc;
-
-                int pos = rng(static_cast<unsigned>(wTgt.ins.size() + 1));
-
-                wTgt.ins.insert(wTgt.ins.begin() + pos, rngIns(rng, coresize));
-                if (pos <= wTgt.startOffset) {
-                    ++wTgt.startOffset;
-                }
-
-                if (rng(2)) {
-                    // modify referencing around this command
-                    int cs = static_cast<int>(coresize);
-                    for (int i = 0; i < pos; ++i) {
-                        auto& x = wTgt.ins[i][3];
-                        if (x < cs / 2 && x >= pos - i) {
-                            ++x;
-                        }
-                        auto& y = wTgt.ins[i][5];
-                        if (y < cs / 2 && y >= pos - i) {
-                            ++y;
-                        }
-                    }
-                    for (int i = pos+1; i < wTgt.ins.size(); ++i) {
-                        auto& x = wTgt.ins[i][3];
-                        if (x > cs / 2 && cs - x > i - pos) {
-                            --x;
-                        }
-                        auto& y = wTgt.ins[i][5];
-                        if (y > cs / 2 && cs - y > i - pos) {
-                            --y;
-                        }
-                    }
-                }
-
+            wTgt = wSrc;
+            if (iri(wTgt)) {
                 --codeChangesLeft;
             }
             break;
