@@ -165,6 +165,87 @@ public:
     }
 };
 
+class RemoveRandomInstruction : public Modifier {
+private:
+    FastRng& mRng;
+    u32_t mCoreSize;
+
+public:
+    RemoveRandomInstruction(FastRng& rng, u32_t coresize)
+        : mRng(rng)
+        , mCoreSize(coresize) {
+    }
+
+    virtual bool operator()(WarriorAry& w) const {
+        // remove random instruction
+        if (w.ins.size() <= 3) {
+            return false;
+        }
+
+        int pos = mRng(static_cast<unsigned>(w.ins.size()));
+
+        w.ins.erase(w.ins.begin() + pos);
+        if (pos < w.startOffset || w.startOffset == w.ins.size()) {
+            --w.startOffset;
+        }
+
+        if (mRng(2)) {
+            // modify referencing around this command
+            // TODO make sure this is correct!
+            int cs = static_cast<int>(mCoreSize);
+            for (int i = 0; i < pos; ++i) {
+                auto& x = w.ins[i][3];
+                if (x < cs / 2 && x >= pos - i) {
+                    --x;
+                }
+                auto& y = w.ins[i][5];
+                if (y < cs / 2 && y >= pos - i) {
+                    --y;
+                }
+            }
+            for (int i = pos; i < w.ins.size(); ++i) {
+                auto& x = w.ins[i][3];
+                if (x > cs / 2 && cs - x > i - pos) {
+                    ++x;
+                }
+                auto& y = w.ins[i][5];
+                if (y > cs / 2 && cs - y > i - pos) {
+                    ++y;
+                }
+            }
+        }
+
+        return true;
+    }
+};
+
+
+class SwapRandomInstruction : public Modifier {
+private:
+    FastRng& mRng;
+
+public:
+    SwapRandomInstruction(FastRng& rng)
+    : mRng(rng) {
+    }
+
+    virtual bool operator()(WarriorAry& w) const {
+        if (w.ins.size() < 2) {
+            return false;
+        }
+
+        unsigned pos1 = mRng(static_cast<unsigned>(w.ins.size()));
+        unsigned pos2;
+        do {
+            pos2 = mRng(static_cast<unsigned>(w.ins.size()));
+        } while (pos1 == pos2);
+
+        std::swap(w.ins[pos1], w.ins[pos2]);
+
+        return true;
+    }
+};
+
 
 
 void evolve(FastRng& rng, 
@@ -181,12 +262,17 @@ void evolve(FastRng& rng,
         ++codeChangesLeft;
     }
 
-    std::vector<Modifier> modifiers;
-    InsertRandomInstruction iri(rng, coresize, maxWarriorLength);
+    std::vector<std::shared_ptr<Modifier>> modifiers;
+    modifiers.push_back(std::make_shared<InsertRandomInstruction>(rng, coresize, maxWarriorLength));
+    modifiers.push_back(std::make_shared<RemoveRandomInstruction>(rng, coresize));
+    modifiers.push_back(std::make_shared<SwapRandomInstruction>(rng));
 
+    InsertRandomInstruction iri(rng, coresize, maxWarriorLength);
+    RemoveRandomInstruction rri(rng, coresize);
+    SwapRandomInstruction sri(rng);
 
     while (codeChangesLeft != 0) {
-        switch (rng(13)) {
+        switch (rng(14)) {
         case 0:
             wTgt = wSrc;
             if (iri(wTgt)) {
@@ -195,56 +281,16 @@ void evolve(FastRng& rng,
             break;
 
         case 1:
-            // remove random instruction
-            if (wSrc.ins.size() > 3) {
-                wTgt = wSrc;
-                int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
-
-                wTgt.ins.erase(wTgt.ins.begin() + pos);
-                if (pos < wTgt.startOffset || wTgt.startOffset == wTgt.ins.size()) {
-                    --wTgt.startOffset;
-                }
-
-                if (rng(2)) {
-                    // modify referencing around this command
-                    // TODO make sure this is correct!
-                    int cs = static_cast<int>(coresize);
-                    for (int i = 0; i < pos; ++i) {
-                        auto& x = wTgt.ins[i][3];
-                        if (x < cs / 2 && x >= pos - i) {
-                            --x;
-                        }
-                        auto& y = wTgt.ins[i][5];
-                        if (y < cs / 2 && y >= pos - i) {
-                            --y;
-                        }
-                    }
-                    for (int i = pos; i < wTgt.ins.size(); ++i) {
-                        auto& x = wTgt.ins[i][3];
-                        if (x > cs / 2 && cs - x > i - pos) {
-                            ++x;
-                        }
-                        auto& y = wTgt.ins[i][5];
-                        if (y > cs / 2 && cs - y > i - pos) {
-                            ++y;
-                        }
-                    }
-                }
+        case 13:
+            wTgt = wSrc;
+            if (rri(wTgt)) {
                 --codeChangesLeft;
             }
             break;
 
         case 2:
-            // swap random instructions
-            if (wSrc.ins.size() > 2) {
-                unsigned pos1 = rng(static_cast<unsigned>(wSrc.ins.size()));
-                unsigned pos2;
-                do {
-                    pos2 = rng(static_cast<unsigned>(wSrc.ins.size()));
-                } while (pos1 == pos2);
-
-                wTgt = wSrc;
-                std::swap(wTgt.ins[pos1], wTgt.ins[pos2]);
+            wTgt = wSrc;
+            if (sri(wTgt)) {
                 --codeChangesLeft;
             }
             break;
