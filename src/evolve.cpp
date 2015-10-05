@@ -108,7 +108,7 @@ void printStatus(size_t iter, const WarriorAry& w, u32_t coresize, double accept
 
 class Modifier {
 public:
-    virtual bool operator()(WarriorAry& w) const;
+    virtual bool operator()(WarriorAry& w) const = 0;
 };
 
 class InsertRandomInstruction : public Modifier {
@@ -124,7 +124,7 @@ public:
         , mRng(rng) {
     }
 
-    bool operator()(WarriorAry& w) const {
+    virtual bool operator()(WarriorAry& w) const {
         // insert random instruction
         if (w.ins.size() >= mMaxWarriorLength) {
             return false;
@@ -183,7 +183,6 @@ void evolve(FastRng& rng,
 
     std::vector<Modifier> modifiers;
     InsertRandomInstruction iri(rng, coresize, maxWarriorLength);
-
 
 
     while (codeChangesLeft != 0) {
