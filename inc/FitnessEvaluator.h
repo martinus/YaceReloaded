@@ -35,8 +35,10 @@ public:
     // calculates fitness for this warrior. This should be as fast as possible.
     double calcFitness(const WarriorAry& warrior, double stopWhenAbove, double& score);
 
+    void addWarriorToKoth(const WarriorAry& warrior, unsigned maxKothSize);
+
     std::string printStats() const;
-    void createTestCases(unsigned roundsPerWarrior);
+    size_t createTestCases(unsigned roundsPerWarrior);
 
 private:
     struct Data;

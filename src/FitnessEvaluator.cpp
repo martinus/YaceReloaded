@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <deque>
 #include <sstream>
 #include <thread>
 #include <omp.h>
@@ -108,6 +109,11 @@ void createWarrior(warrior_t* w, unsigned maxWarriorLength) {
     }
 }
 
+void destroyWarrior(warrior_t* w) {
+    free(w->code);
+    w->code = 0;
+}
+
 // single "test case"
 struct SingleTestCase {
     warrior_t* warrior;
@@ -159,11 +165,14 @@ struct FitnessEvaluator::Data {
     unsigned mMinSep;
     unsigned mCoreSize;
     warrior_t mEvaluationWarrior;
+    unsigned mMaxWarriorLength;
     std::vector<warrior_t> mWarriors;
     std::vector<mars_t*> mMars;
 
     size_t mRounds;
     size_t mEvals;
+
+    std::deque<warrior_t> mKothWarriors;
 
     unsigned mNumThreads;
     std::vector<SingleTestCase> mTestCases;
@@ -182,6 +191,8 @@ struct FitnessEvaluator::Data {
         mEvals = 0;
         mMinSep = minSep;
         mCoreSize = coresize;
+
+        mMaxWarriorLength = maxWarriorLength;
         
         // create a mars for each thread
         for (unsigned i = 0; i < mNumThreads; ++i) {
@@ -234,7 +245,7 @@ struct FitnessEvaluator::Data {
         }
     }
 
-    void createTestCases(unsigned roundsPerWarrior) {
+    size_t createTestCases(unsigned roundsPerWarrior) {
         std::vector<unsigned> positions;
         for (unsigned p = mMinSep; p != mCoreSize - 2 * mMinSep + 1; ++p) {
             positions.push_back(p);
@@ -247,8 +258,12 @@ struct FitnessEvaluator::Data {
         for (unsigned warriorIdx = 0; warriorIdx < mWarriors.size(); ++warriorIdx) {
             createWarriorTestCases(positions, numPoses, &mWarriors[warriorIdx]);
         }
-        // also fight against itself, this is also done in koth.
-        createWarriorTestCases(positions, numPoses, &mEvaluationWarrior);
+
+        for (unsigned warriorIdx = 0; warriorIdx < mKothWarriors.size(); ++warriorIdx) {
+            createWarriorTestCases(positions, numPoses, &mKothWarriors[warriorIdx]);
+        }
+
+        return mTestCases.size();
     }
 
     std::string printStats() const {
@@ -285,6 +300,21 @@ struct FitnessEvaluator::Data {
             f = 7 * maxCycles - numCycles;
         }
         return static_cast<double>(f) / maxCycles;
+    }
+
+
+    void addWarriorToKoth(const WarriorAry& warrior, unsigned maxKothSize) {
+        while (!mKothWarriors.empty() && mKothWarriors.size() >= maxKothSize) {
+            destroyWarrior(&mKothWarriors.front());
+            mKothWarriors.pop_front();
+        }
+
+        if (maxKothSize) {
+            warrior_t w;
+            createWarrior(&w, mMaxWarriorLength);
+            convertWarrior(warrior, w, mMars[0]->coresize);
+            mKothWarriors.push_back(w);
+        }
     }
 
 
@@ -417,6 +447,10 @@ std::string FitnessEvaluator::printStats() const {
     return mData->printStats();
 }
 
-void FitnessEvaluator::createTestCases(unsigned roundsPerWarrior) {
-    mData->createTestCases(roundsPerWarrior);
+size_t FitnessEvaluator::createTestCases(unsigned roundsPerWarrior) {
+    return mData->createTestCases(roundsPerWarrior);
+}
+
+void FitnessEvaluator::addWarriorToKoth(const WarriorAry& warrior, unsigned maxKothSize) {
+    mData->addWarriorToKoth(warrior, maxKothSize);
 }

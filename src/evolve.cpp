@@ -108,7 +108,14 @@ void printStatus(size_t iter, const WarriorAry& w, u32_t coresize, double accept
 
 class Modifier {
 public:
-    virtual bool operator()(WarriorAry& w) const = 0;
+    Modifier()
+        : mUsedCount(0)
+        , mAcceptedCount(0) {
+    }
+    virtual bool operator()(WarriorAry& w) = 0;
+
+    size_t mUsedCount;
+    size_t mAcceptedCount;
 };
 
 class InsertRandomInstruction : public Modifier {
@@ -124,7 +131,7 @@ public:
         , mRng(rng) {
     }
 
-    virtual bool operator()(WarriorAry& w) const {
+    virtual bool operator()(WarriorAry& w) {
         // insert random instruction
         if (w.ins.size() >= mMaxWarriorLength) {
             return false;
@@ -176,7 +183,7 @@ public:
         , mCoreSize(coresize) {
     }
 
-    virtual bool operator()(WarriorAry& w) const {
+    virtual bool operator()(WarriorAry& w) {
         // remove random instruction
         if (w.ins.size() <= 3) {
             return false;
@@ -229,7 +236,7 @@ public:
     : mRng(rng) {
     }
 
-    virtual bool operator()(WarriorAry& w) const {
+    virtual bool operator()(WarriorAry& w) {
         if (w.ins.size() < 2) {
             return false;
         }
@@ -246,250 +253,259 @@ public:
     }
 };
 
+class RandomChangeSingleInstruction : public Modifier {
+private:
+    FastRng& mRng;
+    u32_t mCoreSize;
+    float mChangeProbability;
+
+public:
+    RandomChangeSingleInstruction(FastRng& rng, u32_t coresize, float changeProbability)
+        : mRng(rng)
+        , mCoreSize(coresize)
+        , mChangeProbability(changeProbability) {
+    }
+
+    bool operator()(WarriorAry& w) {
+        if (w.ins.empty()) {
+            return false;
+        }
+
+        unsigned pos = mRng(static_cast<unsigned>(w.ins.size()));
+
+        auto& ins = w.ins[pos];
+        const size_t forcedChangeIdx = mRng(6);
+        for (size_t i = 0; i < ins.size(); ++i) {
+            if (i == forcedChangeIdx || mRng.rand01() < mChangeProbability) {
+                rngIns(mRng, w.ins[pos], mCoreSize, i);
+            }
+        }
+
+        return true;
+    }
+};
+
+class ChangeStartOffset : public Modifier {
+private:
+    FastRng& mRng;
+
+public:
+    ChangeStartOffset(FastRng& rng)
+    : mRng(rng) {
+    }
+
+    bool operator()(WarriorAry& w) {
+        if (w.ins.size() <= 1) {
+            return false;
+        }
+
+        unsigned pos;
+        do {
+            pos = mRng(static_cast<unsigned>(w.ins.size()));
+        } while (pos == w.startOffset);
+
+        w.startOffset = pos;
+        return true;
+    }
+};
+
+// TODO add probability of move instead of duplicate?
+class DuplicateInstruction : public Modifier {
+private:
+    FastRng& mRng;
+    u32_t mMaxWarriorLength;
+
+public:
+    DuplicateInstruction(FastRng& rng, u32_t maxWarriorLength)
+        : mRng(rng)
+        , mMaxWarriorLength(maxWarriorLength) {
+    }
+
+    bool operator()(WarriorAry& w) {
+        if (w.ins.size() >= mMaxWarriorLength || w.ins.empty()) {
+            return false;
+        }
+        unsigned sourcePos = mRng(static_cast<unsigned>(w.ins.size()));
+        auto tmp = w.ins[sourcePos];
+
+        unsigned insertPos = mRng(static_cast<unsigned>(w.ins.size() + 1));
+        w.ins.insert(w.ins.begin() + insertPos, tmp);
+        if (insertPos < w.startOffset) {
+            ++w.startOffset;
+        }
+
+        return true;
+    }
+};
+
+class SwapWithinInstruction : public Modifier {
+private:
+    FastRng& mRng;
+    float mProbNumberSwap;
+    float mProbBothSwap;
+
+public:
+    SwapWithinInstruction(FastRng& rng, float probNumberSwap, float probBothSwap)
+        : mRng(rng)
+        , mProbNumberSwap(probNumberSwap)
+        , mProbBothSwap(probBothSwap) {
+    }
+
+    bool operator()(WarriorAry& w) {
+        if (w.ins.empty()) {
+            return false;
+        }
+
+        const unsigned pos = mRng(static_cast<unsigned>(w.ins.size()));
+
+        if (mRng.rand01() < mProbBothSwap) {
+            std::swap(w.ins[pos][2], w.ins[pos][4]);
+            std::swap(w.ins[pos][3], w.ins[pos][5]);
+        } else {
+            if (mRng.rand01() < mProbNumberSwap) {
+                std::swap(w.ins[pos][3], w.ins[pos][5]);
+            } else {
+                std::swap(w.ins[pos][2], w.ins[pos][4]);
+            }
+        }
+
+        return true;
+    }
+};
+
+class ChangeBetweenInstructions : public Modifier {
+private:
+    FastRng& mRng;
+    float mProbInterchange;
+    float mProbCopy;
+
+public:
+    ChangeBetweenInstructions(FastRng& rng, float probInterchange = 0.5f, float probCopy = 0.0f)
+        : mRng(rng)
+        , mProbInterchange(probInterchange)
+        , mProbCopy(probCopy) {
+    }
+
+    bool operator()(WarriorAry& w) {
+        if (w.ins.size() < 2) {
+            return false;
+        }
+
+        const unsigned pos1 = mRng(static_cast<unsigned>(w.ins.size()));
+        unsigned pos2;
+        do {
+            pos2 = mRng(static_cast<unsigned>(w.ins.size()));
+        } while (pos1 == pos2);
+
+
+        //    0       1       2       3     4       5
+        //  EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 } }
+
+        // random swap a and b value/mode
+        unsigned idx1 = mRng(4);
+        int idx2 = idx1;
+        if (idx1 >= 2 && mRng.rand01() < mProbInterchange) {
+            idx2 += 2;
+        }
+
+        if (mRng.rand01() < mProbCopy) {
+            w.ins[pos1][idx1] = w.ins[pos2][idx2];
+        } else {
+            std::swap(w.ins[pos1][idx1], w.ins[pos2][idx2]);
+        }
+
+        return true;
+    }
+};
+
+
+class ChangeNumber : public Modifier {
+private:
+    FastRng& mRng;
+    u32_t mCoreSize;
+    float mOneChangeProbability;
+
+public:
+    ChangeNumber(FastRng& rng, u32_t coresize, float oneChangeProbability = 0.8f)
+        : mRng(rng)
+        , mCoreSize(coresize)
+        , mOneChangeProbability(oneChangeProbability) {
+    }
+
+    bool operator()(WarriorAry& w) {
+        if (w.ins.empty()) {
+            return false;
+        }
+
+        const unsigned pos = mRng(static_cast<unsigned>(w.ins.size()));
+        int idx = 3;
+        if (mRng(2)) {
+            idx = 5;
+        }
+
+        int change = 1;
+        while (mRng.rand01() < mOneChangeProbability && change < static_cast<int>(mCoreSize)) {
+            ++change;
+        }
+        if (mRng(2)) {
+            change = -change;
+        }
+        change += w.ins[pos][idx];
+
+        // handle over and underflow
+        if (change < 0) {
+            w.ins[pos][idx] = change + mCoreSize;
+        } else if (change >= static_cast<int>(mCoreSize)) {
+            w.ins[pos][idx] = change - mCoreSize;
+        } else {
+            w.ins[pos][idx] = change;
+        }
+
+
+        return true;
+    }
+};
 
 
 void evolve(FastRng& rng, 
-    const WarriorAry& wSrcOriginal, 
-    WarriorAry& wTgt, 
-    u32_t coresize, 
-    u32_t maxWarriorLength)
+            std::vector<std::shared_ptr<Modifier>>& modifiers,
+            const WarriorAry& wSrcOriginal, 
+            WarriorAry& wTgt,
+            std::vector<size_t>& usedModifiers)
 {
     // change at least once, and probably multiple times.
-    auto wSrc = wSrcOriginal;
-
     size_t codeChangesLeft = 1;
     while (rng.rand01() < 0.7) {
         ++codeChangesLeft;
     }
 
-    std::vector<std::shared_ptr<Modifier>> modifiers;
-    modifiers.push_back(std::make_shared<InsertRandomInstruction>(rng, coresize, maxWarriorLength));
-    modifiers.push_back(std::make_shared<RemoveRandomInstruction>(rng, coresize));
-    modifiers.push_back(std::make_shared<SwapRandomInstruction>(rng));
+    // TODO use multi-armed bandit?
+    // probably won't work because it will prefers changes that don't do anything. Changes
+    // that would increase global search be "destroying" the individual would get less and less
+    // attention.
+    wTgt = wSrcOriginal;
 
-    InsertRandomInstruction iri(rng, coresize, maxWarriorLength);
-    RemoveRandomInstruction rri(rng, coresize);
-    SwapRandomInstruction sri(rng);
-
+    usedModifiers.clear();
     while (codeChangesLeft != 0) {
-        switch (rng(14)) {
-        case 0:
-            wTgt = wSrc;
-            if (iri(wTgt)) {
-                --codeChangesLeft;
-            }
-            break;
-
-        case 1:
-        case 13:
-            wTgt = wSrc;
-            if (rri(wTgt)) {
-                --codeChangesLeft;
-            }
-            break;
-
-        case 2:
-            wTgt = wSrc;
-            if (sri(wTgt)) {
-                --codeChangesLeft;
-            }
-            break;
-
-        case 3:
-            // change single pos
-            if (!wSrc.ins.empty()) {
-                wTgt = wSrc;
-                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-                rngIns(rng, wTgt.ins[pos], coresize, rng(6));
-                --codeChangesLeft;
-            }
-            break;
-
-        case 4:
-            // change whole instruction
-            if (!wSrc.ins.empty()) {
-                wTgt = wSrc;
-                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-                wTgt.ins[pos] = rngIns(rng, coresize);
-                --codeChangesLeft;
-            }
-            break;
-
-        case 5:
-            // change start
-            if (wSrc.ins.size() > 1) {
-                size_t pos;
-                do {
-                    pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-                } while (pos == wSrc.startOffset);
-                wTgt = wSrc;
-                wTgt.startOffset = pos;
-                --codeChangesLeft;
-            }
-            break;
-
-        case 6:
-            // duplicate an instruction
-            if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
-                wTgt = wSrc;
-                int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
-                auto tmp = wTgt.ins[pos];
-                wTgt.ins.insert(wTgt.ins.begin() + pos, tmp);
-                if (pos < wTgt.startOffset) {
-                    ++wTgt.startOffset;
-                }
-                --codeChangesLeft;
-            }
-            break;
-
-        case 7:
-            // swap numbers within instruction
-            if (!wSrc.ins.empty()) {
-                wTgt = wSrc;
-                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-                std::swap(wTgt.ins[pos][3], wTgt.ins[pos][5]);
-                --codeChangesLeft;
-            }
-            break;
-
-        case 8:
-            // swap address mode within instruction
-            if (!wSrc.ins.empty()) {
-                wTgt = wSrc;
-                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-                std::swap(wTgt.ins[pos][2], wTgt.ins[pos][4]);
-                --codeChangesLeft;
-            }
-            break;
-
-        case 9:
-            // increase/decrease a number by a bit 
-            if (!wSrc.ins.empty()) {
-                wTgt = wSrc;
-                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-                int idx = 3;
-                if (rng(2)) {
-                    idx = 5;
-                }
-
-                int change = 1;
-                while (rng.rand01() < 0.8f && change < static_cast<int>(coresize)) {
-                    ++change;
-                }
-                if (rng(2)) {
-                    change = -change;
-                }
-                change += wTgt.ins[pos][idx];
-
-                // handle over and underflow
-                if (change < 0) {
-                    wTgt.ins[pos][idx] = change + coresize;
-                } else if (change >= static_cast<int>(coresize)) {
-                    wTgt.ins[pos][idx] = change - coresize;
-                } else {
-                    wTgt.ins[pos][idx] = change;
-                }
-
-                --codeChangesLeft;
-            }
-            break;
-
-        case 10:
-            if (wSrc.ins.empty()) {
-                // set to dat.f $0 $0
-                unsigned pos = rng(static_cast<unsigned>(wSrc.ins.size()));
-                wTgt = wSrc;
-                auto& ins = wTgt.ins[pos];
-                // see http://www.corewars.org/docs/94spec.html
-                // should be 0, 0, 0, 0, 0
-                ins[0] = EX_DAT;
-                ins[1] = EX_mF;
-                ins[2] = EX_DIRECT;
-                ins[3] = 0;
-                ins[4] = EX_DIRECT;
-                ins[5] = 0;
-
-                --codeChangesLeft;
-            }
-
-            // duplicate to random position
-            /*
-            if (wSrc.ins.size() < maxWarriorLength && !wSrc.ins.empty()) {
-                wTgt = wSrc;
-                int pos = rng(static_cast<unsigned>(wTgt.ins.size()));
-                auto tmp = wTgt.ins[pos];
-
-                int insertPos = rng(static_cast<unsigned>(wTgt.ins.size() + 1));
-                wTgt.ins.insert(wTgt.ins.begin() + insertPos, tmp);
-                if (pos <= wTgt.startOffset) {
-                    ++wTgt.startOffset;
-                }
-                --codeChangesLeft;
-            }
-            */
-            break;
-
-        case 11:
-            // swap random within index
-            if (wSrc.ins.size() > 2) {
-                unsigned pos1 = rng(static_cast<unsigned>(wSrc.ins.size()));
-                unsigned pos2;
-                do {
-                    pos2 = rng(static_cast<unsigned>(wSrc.ins.size()));
-                } while (pos1 == pos2);
-
-                wTgt = wSrc;
-
-                //    0       1       2       3     4       5
-                //  EX_MOV, EX_mI, EX_DIRECT, 0, EX_DIRECT, 1 } }
-
-                // random swap a and b value/mode
-                int idx1 = rng(4);
-                int idx2 = idx1;
-                if (idx1 >= 2 && rng(2)) {
-                    idx2 += 2;
-                }
-                std::swap(wTgt.ins[pos1][idx1], wTgt.ins[pos2][idx2]);
-                --codeChangesLeft;
-            }
-            break;
-
-        case 12:
-            // copy single value to random other instruction.
-            // unfortunately copying the full instruction seems to destroy diversity.
-            // Just copy one entry instead.
-            if (wSrc.ins.size() > 2) {
-                wTgt = wSrc;
-                int pos1 = rng(static_cast<unsigned>(wTgt.ins.size()));
-                int pos2;
-                do {
-                    pos2 = rng(static_cast<unsigned>(wTgt.ins.size()));
-                } while (pos1 == pos2);
-
-                // random swap a and b value/mode
-                int idx1 = rng(4);
-                int idx2 = idx1;
-                if (idx1 >= 2 && rng(2)) {
-                    idx2 += 2;
-                }
-
-                wTgt.ins[pos1][idx1] = wTgt.ins[pos2][idx2];
-                --codeChangesLeft;
-            }
-            break;
-
-        default:
-            std::cout << "error!" << std::endl;
-            throw std::runtime_error("evolve switch");
+        unsigned pos = rng(static_cast<unsigned>(modifiers.size()));
+        if ((*modifiers[pos])(wTgt)) {
+            --codeChangesLeft;
+            usedModifiers.push_back(pos);
+            ++modifiers[pos]->mUsedCount;
         }
-
-        // update wSrc for next round
-        wSrc = wTgt;
     }
 }
 
-void printStats(const FitnessEvaluator& fe) {
+void printStats(const FitnessEvaluator& fe, std::vector<std::shared_ptr<Modifier>>& modifiers) {
     std::cout << fe.printStats() << std::endl;
+    std::cout << "Modifiers:" << std::endl;
+    for (size_t i = 0; i < modifiers.size(); ++i) {
+        auto& m = modifiers[i];
+        std::cout << " " << i << ": " 
+            << (m->mAcceptedCount*100.0 / m->mUsedCount) << "% accepted (" 
+            << m->mUsedCount << " used, " << m->mAcceptedCount << " accepted)" << std::endl;
+    }
+
 }
 
 
@@ -522,6 +538,7 @@ int evolve(int argc, char** argv) {
     // create a random start warrior
     WarriorAry wCurrent;
     wCurrent.fitness = std::numeric_limits<double>::max();
+    /*
     for (size_t i = 0; i < 100; ++i) {
         WarriorAry wTry;
         int initialLength = rng(mars->maxWarriorLength) + 1;
@@ -537,6 +554,7 @@ int evolve(int argc, char** argv) {
             wCurrent = wTry;
         }
     }
+    */
 
     WarriorAry wTrial;
 
@@ -552,11 +570,30 @@ int evolve(int argc, char** argv) {
 
     bool isAutoPrintBestActive = true;
 
+
+    std::vector<std::shared_ptr<Modifier>> modifiers;
+    modifiers.push_back(std::make_shared<InsertRandomInstruction>(rng, mars->coresize, mars->maxWarriorLength));
+    modifiers.push_back(std::make_shared<RemoveRandomInstruction>(rng, mars->coresize));
+    modifiers.push_back(std::make_shared<RemoveRandomInstruction>(rng, mars->coresize));
+    modifiers.push_back(std::make_shared<SwapRandomInstruction>(rng));
+    modifiers.push_back(std::make_shared<RandomChangeSingleInstruction>(rng, mars->coresize, 0.0f));
+    modifiers.push_back(std::make_shared<RandomChangeSingleInstruction>(rng, mars->coresize, 1.0f));
+    modifiers.push_back(std::make_shared<ChangeStartOffset>(rng));
+    modifiers.push_back(std::make_shared<DuplicateInstruction>(rng, mars->maxWarriorLength));
+    modifiers.push_back(std::make_shared<SwapWithinInstruction>(rng, 0.5f, 0.5f));
+    modifiers.push_back(std::make_shared<ChangeNumber>(rng, mars->coresize, 0.8f));
+    modifiers.push_back(std::make_shared<ChangeBetweenInstructions>(rng, 0.5f, 0.5f));
+
+
     //while (iter < 10000) {
     // set priority to very low
     SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
+
+    unsigned kothSize = 10;
+
+    std::vector<size_t> usedModifiers;
     while (true) {
-        evolve(rng, wCurrent, wTrial, mars->coresize, mars->maxWarriorLength);
+        evolve(rng, modifiers, wCurrent, wTrial, usedModifiers);
 
         // see https://github.com/StanfordPL/stoke-release/blob/232ca096de53be8f1f528b22f3b610566f386cae/src/search/search.cc#L142
         const auto maxFitness = wCurrent.fitness - std::log(rng.rand01()) / beta;
@@ -566,6 +603,11 @@ int evolve(int argc, char** argv) {
         if (wTrial.fitness <= maxFitness) {
             gotAccepted = 1;
             wCurrent = wTrial;
+
+            for (size_t i = 0; i < usedModifiers.size(); ++i) {
+                ++modifiers[usedModifiers[i]]->mAcceptedCount;
+            }
+
 
             if (wCurrent.fitness < wBest.fitness) {
                 wBest = wCurrent;
@@ -578,12 +620,15 @@ int evolve(int argc, char** argv) {
 
         if (iter % 100 == 0) {
             // recreate test cases from time to time, to prevent overfitting
-            fe.createTestCases(roundsPerWarrior);
+            fe.addWarriorToKoth(wBest, kothSize);
+            size_t numTestCases = fe.createTestCases(roundsPerWarrior);
+
             // re-evaluate current and best
             wCurrent.fitness = fe.calcFitness(wCurrent, std::numeric_limits<double>::max(), wCurrent.score);
             auto oldScore = wBest.score;
             wBest.fitness = fe.calcFitness(wBest, std::numeric_limits<double>::max(), wBest.score);
-            std::cout << "Score changed from " << oldScore << " to " << wBest.score << std::endl;
+            std::cout << "Score changed from " << oldScore << " to " << wBest.score << ". " << numTestCases << " test cases." << std::endl;
+
         }
 
         acceptanceRate = acceptanceRate * 0.99 + gotAccepted * 0.01;
@@ -645,7 +690,13 @@ int evolve(int argc, char** argv) {
                 break;
 
             case 's':
-                printStats(fe);
+                printStats(fe, modifiers);
+                break;
+
+            case 'k':
+                std::cout << "Currently using " << kothSize << " KoTH size. Enter new size: ";
+                std::cin >> kothSize;
+                std::cout << "using " << kothSize << " from now on." << std::endl;
                 break;
 
             default:
@@ -660,13 +711,14 @@ int evolve(int argc, char** argv) {
                     << " B: double beta" << std::endl
                     << " b: half beta" << std::endl
                     << " s: print stats" << std::endl
+                    << " k: change KoTH size" << std::endl
                     << std::endl;
                 break;
             }
         }
     }
     printStatus(iter, wBest, mars->coresize, acceptanceRate, beta);
-    printStats(fe);
+    printStats(fe, modifiers);
 
     //const auto stop = std::chrono::system_clock::now();
     //auto t = std::chrono::duration<double>(stop - start).count();
